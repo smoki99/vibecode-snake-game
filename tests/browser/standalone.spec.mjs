@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { launchBrowser, startServer } from '../helpers/browser.mjs';
+import { launchBrowser, startServer, warmUp } from '../helpers/browser.mjs';
 
 /**
  * The offline promise: open dist/snake-standalone.html straight from the filesystem, with no server
@@ -15,6 +15,7 @@ let server;
 test.before(async () => {
   browser = await launchBrowser();
   server = await startServer(); // only used to prove the page never asks it for anything
+  await warmUp(browser, FILE_URL);
 });
 
 test.afterEach(async () => {

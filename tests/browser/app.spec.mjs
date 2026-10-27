@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { launchBrowser, openPage, startServer } from '../helpers/browser.mjs';
+import { launchBrowser, openPage, startServer, warmUp } from '../helpers/browser.mjs';
 
 /**
  * Boot, presentation and accessibility smoke tests.
@@ -16,6 +16,7 @@ let browser;
 test.before(async () => {
   server = await startServer();
   browser = await launchBrowser();
+  await warmUp(browser, `${server.url}/`);
 });
 
 test.afterEach(async () => {

@@ -9,6 +9,7 @@ import {
   pumpUntilInPage,
   readState,
   startServer,
+  warmUp,
 } from '../helpers/browser.mjs';
 
 /**
@@ -26,6 +27,7 @@ let browser;
 test.before(async () => {
   server = await startServer();
   browser = await launchBrowser();
+  await warmUp(browser, APP());
 });
 
 // Gameplay runs against the single-file bundle, not the dev page: one HTTP request instead of a

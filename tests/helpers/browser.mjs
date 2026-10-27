@@ -67,8 +67,22 @@ export async function openPage(browser, url, { viewport, reducedMotion, permissi
   };
 }
 
-/** Read the game snapshot the page exposes at window.game (see src/main.js). */
-export const readState = (page) =>
+/**
+ * Cold-Chromium warm-up: open one page and send one real input event before any test runs.
+ *
+ * The first genuine input event dispatched into a freshly launched browser can take tens of
+ * seconds on a contended host (the renderer has to come up, latch focus and ack the event), and
+ * that cost used to land on whichever test happened to run first — looking exactly like a game that
+ * ignores the space bar. Absorbing it here makes per-test timings comparable.
+ */
+export async function warmUp(browser, url) {
+  const { page } = await openPage(browser, url);
+  await page.keyboard.press('Space').catch(() => {});
+  await page.mouse.move(10, 10).catch(() => {});
+  await page.close().catch(() => {});
+}
+
+/** Read the game snapshot the page exposes at window.game (see src/main.js). */export const readState = (page) =>
   page.evaluate(() => {
     const game = window.game;
     const state = game.state;
