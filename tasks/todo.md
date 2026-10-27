@@ -53,6 +53,10 @@ Tick boxes are the working state; `[x]` means the code exists, is tested and is 
       seeded replay, and the `file://` bundle
 - [x] Scripted manoeuvres run inside a single `page.evaluate` (`eatApples`, `pumpUntilInPage`) so the
       page's live loop cannot interleave ticks mid-test
+- [x] Two real bugs surfaced only when the browser suite was actually run: the theme button had no
+      handler at all (`?theme=` worked, clicking did nothing), and `eatApples` grew the snake to 30
+      segments because it waited for "head is on the apple" — a condition the sim resolves inside a
+      single tick, so the observable signal is the body growing
 
 ## Phase 6 — Ship
 - [x] README (run, controls, architecture, testing, decisions, limits)

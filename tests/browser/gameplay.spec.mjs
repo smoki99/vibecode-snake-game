@@ -28,6 +28,12 @@ test.before(async () => {
   browser = await launchBrowser();
 });
 
+// Gameplay runs against the single-file bundle, not the dev page: one HTTP request instead of a
+// thirty-module graph, which is the difference between a second and a minute on a loaded machine —
+// and it means these tests exercise the artifact that actually ships. `npm run build` is part of
+// npm test, so the bundle under test is always the current source.
+const APP = () => `${server.url}/dist/snake-standalone.html`;
+
 test.afterEach(async () => {
   // A failing assertion returns before page.close(); reclaim the context so one failure cannot
   // starve the rest of the file.
@@ -42,7 +48,7 @@ test.after(async () => {
 const pad4 = (value) => String(value).padStart(4, '0');
 
 test('game: Space starts the run and the HUD goes live', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=play&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=play&theme=dark`);
   await page.keyboard.press('Space');
   const state = await readState(page);
   assert.equal(state.status, 'playing');
@@ -53,7 +59,7 @@ test('game: Space starts the run and the HUD goes live', async () => {
 });
 
 test('game: arrow keys steer and a 180° reversal is refused', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=steer&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=steer&theme=dark`);
   await page.keyboard.press('Space');
   await page.keyboard.press('ArrowUp');
   await pumpTick(page);
@@ -70,7 +76,7 @@ test('game: arrow keys steer and a 180° reversal is refused', async () => {
 });
 
 test('game: a two-stage feint queued in one frame both lands', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=feint&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=feint&theme=dark`);
   await page.keyboard.press('Space'); // heading right
   await page.keyboard.press('ArrowUp');
   await page.keyboard.press('ArrowLeft');
@@ -81,7 +87,7 @@ test('game: a two-stage feint queued in one frame both lands', async () => {
 });
 
 test('game: eating an apple grows the snake and updates the HUD', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=eat&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=eat&theme=dark`);
   await page.keyboard.press('Space');
   const { eaten } = await eatApples(page, 1);
   assert.equal(
@@ -97,7 +103,7 @@ test('game: eating an apple grows the snake and updates the HUD', async () => {
 });
 
 test('game: hitting a wall ends the run, stores the best and offers a restart', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=wall&difficulty=frantic&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=wall&difficulty=frantic&theme=dark`);
   await page.keyboard.press('Space');
   // Eat first: a scoreless run is never stored, so it would prove nothing about the best-score card.
   const { eaten } = await eatApples(page, 1);
@@ -126,7 +132,7 @@ test('game: hitting a wall ends the run, stores the best and offers a restart', 
 });
 
 test('game: self-collision is fatal and says so', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=self&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=self&theme=dark`);
   await page.keyboard.press('Space');
   const { eaten, after } = await eatApples(page, 2, (game) => {
     const { cols, rows } = game.state.board;
@@ -191,7 +197,7 @@ test('game: self-collision is fatal and says so', async () => {
 });
 
 test('game: P pauses, P resumes, and the overlay explains it', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=pause&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=pause&theme=dark`);
   await page.keyboard.press('Space');
   await page.keyboard.press('KeyP');
   assert.equal((await readState(page)).status, 'paused');
@@ -205,7 +211,7 @@ test('game: P pauses, P resumes, and the overlay explains it', async () => {
 });
 
 test('game: R restarts and keeps the chosen difficulty', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=again&difficulty=frantic&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=again&difficulty=frantic&theme=dark`);
   await page.keyboard.press('Space');
   await page.keyboard.press('KeyR');
   const state = await readState(page);
@@ -216,7 +222,7 @@ test('game: R restarts and keeps the chosen difficulty', async () => {
 });
 
 test('game: changing difficulty mid-run restarts at that pace and keeps best scores separate', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=diff&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=diff&theme=dark`);
   await page.keyboard.press('Space');
   const classic = await readState(page);
   await page.click('input[value="frantic"]');
@@ -234,19 +240,19 @@ test('game: changing difficulty mid-run restarts at that pace and keeps best sco
 });
 
 test('game: the sound toggle persists across a reload', async () => {
-  const { page, context } = await openPage(browser, `${server.url}/?seed=sound&theme=dark`);
+  const { page, context } = await openPage(browser, `${APP()}/?seed=sound&theme=dark`);
   await page.click('#sound-toggle');
   assert.equal(await page.getAttribute('#sound-toggle', 'aria-pressed'), 'true');
   const second = await context.newPage();
-  await second.goto(`${server.url}/?seed=sound&theme=dark`, { timeout: 90_000 });
-  await second.waitForSelector('body[data-ready]');
+  await second.goto(`${APP()}/?seed=sound&theme=dark`, { timeout: 90_000 });
+  await second.waitForSelector('body[data-ready]', { timeout: 90_000 });
   assert.equal(await second.getAttribute('#sound-toggle', 'aria-pressed'), 'true', 'the choice must stick');
   await second.close();
   await page.close();
 });
 
 test('game: the theme button and the T key both cycle and persist', async () => {
-  const { page, context } = await openPage(browser, `${server.url}/?seed=theme&theme=dark`);
+  const { page, context } = await openPage(browser, `${APP()}/?seed=theme&theme=dark`);
   assert.equal(await page.getAttribute('#theme-toggle', 'data-theme'), 'dark');
   await page.click('#theme-toggle');
   assert.equal(await page.getAttribute('#theme-toggle', 'data-theme'), 'light');
@@ -258,15 +264,15 @@ test('game: the theme button and the T key both cycle and persist', async () => 
 
   await page.keyboard.press('KeyT'); // → light, and this time it is remembered
   const second = await context.newPage();
-  await second.goto(`${server.url}/?seed=theme`, { timeout: 90_000 });
-  await second.waitForSelector('body[data-ready]');
+  await second.goto(`${APP()}/?seed=theme`, { timeout: 90_000 });
+  await second.waitForSelector('body[data-ready]', { timeout: 90_000 });
   assert.equal(await second.getAttribute('html', 'data-theme'), 'light', 'the choice must stick');
   await second.close();
   await page.close();
 });
 
 test('game: the d-pad and a swipe both drive the board on a touch viewport', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=touch&theme=dark`, {
+  const { page } = await openPage(browser, `${APP()}/?seed=touch&theme=dark`, {
     viewport: { width: 420, height: 820 },
     hasTouch: true,
     isMobile: true,
@@ -291,7 +297,7 @@ test('game: the d-pad and a swipe both drive the board on a touch viewport', asy
 });
 
 test('game: a long tab stall does not fast-forward the snake into a wall', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=stall&difficulty=chill&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=stall&difficulty=chill&theme=dark`);
   await page.keyboard.press('Space');
   const before = await readState(page);
   // One enormous frame: the loop must cap the catch-up instead of simulating nine seconds.
@@ -308,7 +314,7 @@ test('game: a long tab stall does not fast-forward the snake into a wall', async
 });
 
 test('game: the same seed replays identically in the shipped bundle', async () => {
-  const { page } = await openPage(browser, `${server.url}/?seed=replay&difficulty=frantic&theme=dark`);
+  const { page } = await openPage(browser, `${APP()}/?seed=replay&difficulty=frantic&theme=dark`);
   const script = [
     'up', 'pump', 'pump', 'left', 'pump', 'pump', 'down', 'pump', 'pump', 'right', 'pump', 'pump',
     'up', 'pump', 'pump', 'left', 'pump', 'pump', 'down', 'pump', 'pump', 'pump', 'pump', 'right',

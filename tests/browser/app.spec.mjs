@@ -119,7 +119,7 @@ test('app: canvas backing store follows devicePixelRatio', async () => {
   const context = await browser.newContext({ viewport: { width: 1000, height: 800 }, deviceScaleFactor: 2 });
   const page = await context.newPage();
   await page.goto(`${server.url}/`, { waitUntil: 'load', timeout: 90_000 });
-  await page.waitForSelector('body[data-ready="1"]');
+  await page.waitForSelector('body[data-ready="1"]', { timeout: 90_000 });
   const metrics = await page.evaluate(() => {
     const canvas = document.getElementById('board');
     return {

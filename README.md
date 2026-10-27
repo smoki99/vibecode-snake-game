@@ -83,6 +83,13 @@ npm run test:browser   # 25 Playwright tests against the dev build and the file:
 npm run test:all       # both
 ```
 
+`gameplay.spec.mjs` drives the **bundle** (`dist/snake-standalone.html`) over HTTP rather than the
+dev page: one request instead of a thirty-module graph — which is the difference between a second
+and a minute on a loaded machine — and it is the artifact that actually ships. `app.spec.mjs`
+deliberately loads the multi-file dev page, because that page's module graph, sprite injection and
+theme wiring are what it asserts. Both are served by the same static server on a random port;
+nothing in the suite binds a fixed port.
+
 - **Unit** (`tests/unit`) — RNG determinism, state machine, every death rule and the
   tail-vacates exception, input buffering, food spawning away from the snake, difficulty curves,
   storage corruption, loop catch-up, and a layering guard that fails the build if `sim/` ever

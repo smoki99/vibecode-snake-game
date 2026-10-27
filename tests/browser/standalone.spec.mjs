@@ -40,7 +40,7 @@ test('standalone: opens from file:// and boots with no console errors', async ()
   page.on('request', (request) => requests.push(request.url()));
 
   await page.goto(FILE_URL, { waitUntil: 'load', timeout: 90_000 });
-  await page.waitForSelector('body[data-ready="1"]', { timeout: 30_000 });
+  await page.waitForSelector('body[data-ready="1"]', { timeout: 90_000 });
 
   assert.deepEqual(errors, [], 'the offline build must boot clean');
   const served = requests.filter((url) => url.startsWith(server.url));
@@ -55,7 +55,7 @@ test('standalone: playable from file://', async () => {
   const context = await browser.newContext({ viewport: { width: 1200, height: 860 } });
   const page = await context.newPage();
   await page.goto(FILE_URL, { waitUntil: 'load', timeout: 90_000 });
-  await page.waitForSelector('body[data-ready="1"]');
+  await page.waitForSelector('body[data-ready="1"]', { timeout: 90_000 });
 
   await page.keyboard.press('Digit3');
   await page.keyboard.press('Space');

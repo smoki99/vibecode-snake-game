@@ -55,7 +55,7 @@ export async function openPage(browser, url, { viewport, reducedMotion, permissi
   // Generous on purpose: Playwright's 30 s default turns a CPU-starved host into a wall of
   // unrelated timeouts. The node --test-timeout is the real backstop.
   await page.goto(url, { waitUntil: 'load', timeout: 90_000 });
-  await page.waitForSelector('body[data-ready="1"]', { timeout: 30_000 });
+  await page.waitForSelector('body[data-ready="1"]', { timeout: 90_000 });
   return {
     page,
     context,
@@ -153,11 +153,14 @@ export async function eatApples(page, count = 1, then = null) {
 
     const trail = [];
     for (let apple = 0; apple < n && game.state.status === 'playing'; apple += 1) {
-      let guard = 0;
-      while (game.state.status === 'playing' && guard < 600) {
-        guard += 1;
+      // The apple is consumed and the next one spawns in the same tick, so "head sits on the
+      // apple" is never observable. Watch the body grow instead — otherwise this loop keeps
+      // hunting apples forever and the caller gets a 30-segment snake when they asked for one.
+      const lengthBefore = game.state.snake.length;
+      let ticks = 0;
+      while (game.state.status === 'playing' && ticks < 600) {
+        ticks += 1;
         const head = game.state.snake[0];
-        if (head.x === game.state.food.x && head.y === game.state.food.y) break;
         const blocked = new Set(game.state.snake.slice(0, -1).map(key));
         const step = firstStep(head, game.state.food, blocked);
         if (step === null) break;
@@ -166,8 +169,9 @@ export async function eatApples(page, count = 1, then = null) {
           game.state.dir;
         game.steer(wanted === OPPOSITE[game.state.dir] ? game.state.dir : wanted);
         game.pump(game.state.tickMs);
+        if (game.state.snake.length > lengthBefore) break;
       }
-      trail.push({ length: game.state.snake.length, score: game.state.score, status: game.state.status });
+      trail.push({ length: game.state.snake.length, score: game.state.score, status: game.state.status, ticks });
     }
     const result = {
       trail,
