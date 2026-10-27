@@ -1,0 +1,45 @@
+{
+  "generatedBy": "tools/fetch-fonts.mjs",
+  "license": "SIL OFL 1.1",
+  "families": [
+    {
+      "pkg": "@fontsource/space-grotesk",
+      "version": "5.3.0",
+      "files": [
+        {
+          "name": "space-grotesk-latin-400-normal.woff2",
+          "bytes": 13388,
+          "sha256": "65fd17fcbd2e2f522940b5f67ead3d23329e02891aa5495e74d11a499c0b0673"
+        },
+        {
+          "name": "space-grotesk-latin-500-normal.woff2",
+          "bytes": 13312,
+          "sha256": "1b1a8131d9edf975d9decee81e2f2bf504812f7a4f498e5500f28a613e22e64c"
+        },
+        {
+          "name": "space-grotesk-latin-700-normal.woff2",
+          "bytes": 12840,
+          "sha256": "35f8aec56cfd5cbfdb03cc68733a54a0b05bb3617ffcd5fd332badc0b045ca55"
+        }
+      ],
+      "licenseFile": "space-grotesk-OFL.txt"
+    },
+    {
+      "pkg": "@fontsource/silkscreen",
+      "version": "5.3.0",
+      "files": [
+        {
+          "name": "silkscreen-latin-400-normal.woff2",
+          "bytes": 8404,
+          "sha256": "e6c72ea4702249202bcdd79d3343057e4e25ef1f04e3fcffd8602ab53b40b4cc"
+        },
+        {
+          "name": "silkscreen-latin-700-normal.woff2",
+          "bytes": 7524,
+          "sha256": "5741b7f01a127f40ed70281fa2f686e8fc2cfe241930a120e4d1a1cebe78f995"
+        }
+      ],
+      "licenseFile": "silkscreen-OFL.txt"
+    }
+  ]
+}

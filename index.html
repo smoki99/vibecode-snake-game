@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Snake — Grid Arcade</title>
+    <meta name="description" content="A production-grade Snake: fixed-timestep simulation, seeded randomness, keyboard and touch controls. Runs with no network access." />
+    <meta name="theme-color" content="#060B08" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="dist/brand/favicon-180x180.png" />
+    <link rel="stylesheet" href="assets/styles/styles.css" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Snake — Grid Arcade" />
+    <meta property="og:description" content="Fixed-timestep simulation, seeded randomness, keyboard and touch. Runs offline." />
+    <meta property="og:image" content="dist/brand/og-card-1200x630.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The Snake wordmark under a pixel snake mark on a dark grid." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Snake — Grid Arcade" />
+    <meta name="twitter:description" content="Fixed-timestep simulation, seeded randomness, keyboard and touch. Runs offline." />
+    <meta name="twitter:image" content="dist/brand/og-card-1200x630.jpg" />
+  </head>
+  <body>
+    <div id="sprite" hidden aria-hidden="true"></div>
+    <a class="skip-link" href="#board">Skip to the board</a>
+
+    <header class="topbar">
+      <a class="brand" href="./">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="40" height="40" focusable="false">
+            <rect width="48" height="48" rx="13" fill="#15291D" stroke="#2B4C37" stroke-width="1.6" />
+            <g fill="#3FD07A">
+              <rect x="8.5" y="32.5" width="7" height="7" rx="2.3" />
+              <rect x="16.5" y="32.5" width="7" height="7" rx="2.3" />
+              <rect x="24.5" y="32.5" width="7" height="7" rx="2.3" />
+              <rect x="24.5" y="24.5" width="7" height="7" rx="2.3" />
+              <rect x="24.5" y="16.5" width="7" height="7" rx="2.3" />
+            </g>
+            <rect x="32.5" y="16.5" width="7" height="7" rx="2.4" fill="#8FF9B8" />
+            <circle cx="37.2" cy="19.4" r="1.2" fill="#07120C" />
+            <circle cx="12" cy="12" r="3.4" fill="#FF6B57" />
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-word">SNAKE</span>
+          <span class="brand-sub">Grid Arcade · No. 001</span>
+        </span>
+      </a>
+
+      <nav class="topbar-actions" aria-label="Game controls">
+        <button type="button" id="theme-btn" class="icon-btn" title="Theme: dark (T)" aria-label="Switch colour theme">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-theme" /></svg>
+        </button>
+        <button type="button" id="sound-btn" class="icon-btn" aria-pressed="false" title="Sound (M)">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-sound-off" /></svg>
+          <span class="icon-btn-label">Sound</span>
+        </button>
+        <button type="button" id="pause-btn" class="icon-btn" aria-pressed="false" title="Pause or resume (P)">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-pause" /></svg>
+          <span class="icon-btn-label">Pause</span>
+        </button>
+        <button type="button" id="restart-btn" class="icon-btn" title="New run (R)">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-restart" /></svg>
+          <span class="icon-btn-label">Restart</span>
+        </button>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <section class="stage" aria-label="Playfield">
+        <div class="board-frame">
+          <canvas id="board" width="960" height="720" role="img" aria-label="Snake board. Use the readout below for score and status."></canvas>
+          <div id="overlay" class="overlay" data-status="idle">
+            <div class="overlay-card" role="group" aria-labelledby="overlay-title">
+              <p class="overlay-kicker" id="overlay-kicker">Grid Arcade</p>
+              <h2 class="overlay-title" id="overlay-title">Ready when you are</h2>
+              <p class="overlay-body" id="overlay-body">Steer with the arrow keys, WASD, or swipe. Eat apples, avoid walls and your own tail.</p>
+              <p class="overlay-score" id="overlay-score" hidden></p>
+              <p class="overlay-badge" id="overlay-badge" hidden></p>
+              <div class="overlay-actions">
+                <button type="button" id="overlay-primary" class="btn btn-primary" data-action="start">
+                  <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-play" /></svg>
+                  <span>Start</span>
+                </button>
+                <button type="button" id="overlay-secondary" class="btn btn-ghost" data-action="close" hidden>
+                  <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-close" /></svg>
+                  <span>Close</span>
+                </button>
+              </div>
+              <p class="overlay-hint" id="overlay-hint"><kbd>Space</kbd> also starts</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="stage-bar">
+          <div class="dpad" role="group" aria-label="Touch steering">
+            <button type="button" class="dpad-btn dpad-up" data-dir="up" aria-label="Steer up">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-chevron-right" /></svg>
+            </button>
+            <button type="button" class="dpad-btn dpad-left" data-dir="left" aria-label="Steer left">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-chevron-right" /></svg>
+            </button>
+            <button type="button" class="dpad-btn dpad-down" data-dir="down" aria-label="Steer down">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-chevron-right" /></svg>
+            </button>
+            <button type="button" class="dpad-btn dpad-right" data-dir="right" aria-label="Steer right">
+              <svg class="icon" aria-hidden="true" focusable="false"><use href="#icon-chevron-right" /></svg>
+            </button>
+          </div>
+          <p class="stage-note" id="input-note">Arrow keys, WASD, or swipe.</p>
+        </div>
+      </section>
+
+      <aside class="sidebar" aria-label="Score and settings">
+        <section class="panel readout" aria-label="Current run">
+          <div class="readout-row">
+            <div class="stat">
+              <p class="stat-label">Score</p>
+              <p class="stat-value" id="score">0000</p>
+            </div>
+            <div class="stat">
+              <p class="stat-label">Best</p>
+              <p class="stat-value stat-value-soft" id="best">0000</p>
+            </div>
+            <div class="stat">
+              <p class="stat-label">Apples</p>
+              <p class="stat-value stat-value-soft" id="apples">0</p>
+            </div>
+          </div>
+          <div class="meter" aria-hidden="true">
+            <div class="meter-track"><div class="meter-fill" id="speed-fill"></div></div>
+            <p class="meter-label"><span id="speed-tier">Tier 1</span><span id="speed-ms">120 ms / tick</span></p>
+          </div>
+          <p class="sr-only" id="run-status" role="status"></p>
+        </section>
+
+        <fieldset class="panel difficulty">
+          <legend class="panel-title">Difficulty</legend>
+          <label class="pill" data-preset="chill">
+            <input type="radio" name="difficulty" value="chill" />
+            <span class="pill-name">Chill</span>
+            <span class="pill-spec">150 → 90 ms</span>
+          </label>
+          <label class="pill" data-preset="classic">
+            <input type="radio" name="difficulty" value="classic" />
+            <span class="pill-name">Classic</span>
+            <span class="pill-spec">120 → 60 ms</span>
+          </label>
+          <label class="pill" data-preset="frantic">
+            <input type="radio" name="difficulty" value="frantic" />
+            <span class="pill-name">Frantic</span>
+            <span class="pill-spec">90 → 45 ms</span>
+          </label>
+          <p class="panel-foot" id="difficulty-note">Speed climbs with every apple.</p>
+        </fieldset>
+
+        <section class="panel ranks" aria-labelledby="ranks-title">
+          <h2 class="panel-title" id="ranks-title">Your bests</h2>
+          <ol class="ranks-list" id="ranks-list"></ol>
+        </section>
+
+        <section class="panel help" aria-labelledby="help-title">
+          <h2 class="panel-title" id="help-title">
+            <svg class="icon icon-inline" aria-hidden="true" focusable="false"><use href="#icon-keyboard" /></svg>
+            Controls
+          </h2>
+          <dl class="keys">
+            <dt><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt>
+            <dd>Steer (two turns can queue)</dd>
+            <dt><kbd>Space</kbd></dt><dd>Start or stop</dd>
+            <dt><kbd>P</kbd> / <kbd>Esc</kbd></dt><dd>Pause</dd>
+            <dt><kbd>R</kbd></dt><dd>New run</dd>
+            <dt><kbd>M</kbd></dt><dd>Mute</dd>
+            <dt><kbd>T</kbd></dt><dd>Theme: dark, light, or auto</dd>
+            <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Difficulty: chill, classic, frantic</dd>
+          </dl>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="foot">
+      <p>
+        <svg class="icon icon-inline" aria-hidden="true" focusable="false"><use href="#icon-gamepad" /></svg>
+        No network calls, no tracking, no build step required. Bests live in this browser only.
+      </p>
+      <p class="foot-seed" id="seed-note"></p>
+    </footer>
+
+    <div id="live" class="sr-only" role="status" aria-live="polite"></div>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

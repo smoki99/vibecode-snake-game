@@ -1,0 +1,19 @@
+# Dependencies and generated caches — never authored, never committed.
+node_modules/
+.npm/
+.cache/
+.piweb/
+
+# Build scratch: esbuild intermediates, Playwright resolver cache, rendered previews.
+.build/
+
+# Local agent/tooling state, not project source.
+.claude/
+.pi/
+.app.log
+.tunnel.log
+.build-pw-*.log
+*.log
+
+# The generated rasters and the single-file bundle under dist/ ARE deliverables and stay tracked:
+# they are what you hand to a browser, a favicon requester or a link unfurler.

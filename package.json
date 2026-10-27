@@ -1,0 +1,22 @@
+{
+  "name": "snake",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A modern web Snake game \u2014 deterministic simulation, canvas rendering, single-file offline build.",
+  "type": "module",
+  "scripts": {
+    "setup": "node tools/fetch-fonts.mjs",
+    "serve": "node tools/serve.mjs --port 8080",
+    "icons": "node tools/sprite.mjs",
+    "brand": "node tools/render-brand.mjs",
+    "build": "node tools/sprite.mjs && node tools/build-single.mjs --minify",
+    "test": "node --test \"tests/unit/**/*.spec.mjs\" \"tests/assets/**/*.spec.mjs\" \"tests/build/**/*.spec.mjs\"",
+    "test:browser": "node --test --test-timeout=45000 --test-concurrency=1 \"tests/browser/**/*.spec.mjs\"",
+    "test:all": "node --test --test-timeout=45000 --test-concurrency=1 \"tests/**/*.spec.mjs\"",
+    "check": "node tools/sprite.mjs --check && npm run build && npm test && npm run test:browser",
+    "reap": "node tools/reap-stale.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-labelledby="poster-title poster-desc">
+  <style>
+    /* Vendored, OFL-licensed, latin-subset. Paths are relative to assets/brand/. */
+    @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:400;src:url('../fonts/space-grotesk-latin-400-normal.woff2') format('woff2')}
+    @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:500;src:url('../fonts/space-grotesk-latin-500-normal.woff2') format('woff2')}
+    @font-face{font-family:'Silkscreen';font-style:normal;font-weight:400;src:url('../fonts/silkscreen-latin-400-normal.woff2') format('woff2')}
+    @font-face{font-family:'Silkscreen';font-style:normal;font-weight:700;src:url('../fonts/silkscreen-latin-700-normal.woff2') format('woff2')}
+  </style>
+
+  <title id="poster-title">Snake - Grid Arcade No. 001</title>
+  <desc id="poster-desc">Poster artwork: a glowing green snake crosses a dark grid board, its head reared toward a red apple, beside the wordmark SNAKE and a small score readout.</desc>
+
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#0C1712"/>
+      <stop offset="1" stop-color="#060B08"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#157F47"/>
+      <stop offset="0.5" stop-color="#3FD07A"/>
+      <stop offset="1" stop-color="#8FF9B8"/>
+    </linearGradient>
+    <radialGradient id="apple" cx="0.35" cy="0.3" r="0.85">
+      <stop offset="0" stop-color="#FFC0A8"/>
+      <stop offset="0.45" stop-color="#FF6B57"/>
+      <stop offset="1" stop-color="#B81F2A"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FF6B57" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FF6B57" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="boardGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3FD07A" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#3FD07A" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="cells" width="45" height="45" patternUnits="userSpaceOnUse" x="622" y="90">
+      <rect x="2" y="2" width="41" height="41" rx="7" fill="#0F1D16"/>
+    </pattern>
+    <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="0.38" stop-color="#ffffff"/>
+    </linearGradient>
+    <mask id="fadeMask">
+      <rect x="622" y="90" width="540" height="450" fill="url(#fade)"/>
+    </mask>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#page)"/>
+  <circle cx="900" cy="315" r="330" fill="url(#boardGlow)"/>
+
+  <!-- board -->
+  <g>
+    <rect x="622" y="90" width="540" height="450" rx="18" fill="#0A120E" stroke="#1B2E24" stroke-width="2"/>
+    <g mask="url(#fadeMask)">
+      <rect x="622" y="90" width="540" height="450" fill="url(#cells)"/>
+    </g>
+
+    <!-- apple, with its light -->
+    <circle cx="734.5" cy="247.5" r="62" fill="url(#halo)"/>
+    <circle cx="734.5" cy="247.5" r="17.5" fill="url(#apple)"/>
+    <path d="M734.5 232.5c0-7.5 4.6-12.6 12-13.6" stroke="#2F8F55" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="700" cy="205" rx="4" ry="4" fill="#17301F"/>
+
+    <!-- snake: one stroke through cell centres reads as a single body -->
+    <path d="M689.5 472.5H779.5V382.5H914.5V292.5H1049.5V202.5H1094.5V157.5"
+          fill="none" stroke="#04100A" stroke-width="50" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M689.5 472.5H779.5V382.5H914.5V292.5H1049.5V202.5H1094.5V157.5"
+          fill="none" stroke="url(#body)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M689.5 472.5H779.5V382.5H914.5V292.5H1049.5V202.5H1094.5V157.5"
+          fill="none" stroke="#D8FFE6" stroke-opacity="0.22" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- head -->
+    <g filter="url(#soft)" opacity="0.5"><rect x="1072.5" y="133.5" width="44" height="48" rx="16" fill="#8FF9B8"/></g>
+    <rect x="1070.5" y="133.5" width="48" height="48" rx="16" fill="#8FF9B8"/>
+    <circle cx="1083.5" cy="147.5" r="4.6" fill="#061209"/>
+    <circle cx="1105.5" cy="147.5" r="4.6" fill="#061209"/>
+    <path d="M1094.5 133v-11m0 0-5.5-6.5m5.5 6.5 5.5-6.5" stroke="#FF6B57" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+
+    <text x="1162" y="566" text-anchor="end" fill="#3F6152" font-family="'Space Grotesk', sans-serif" font-size="15" letter-spacing="1.4">24 x 18 CELLS</text>
+  </g>
+
+  <!-- mark -->
+  <g transform="translate(64 52)">
+    <rect width="46" height="46" rx="13" fill="#122619" stroke="#294933" stroke-width="1.6"/>
+    <g fill="#3FD07A">
+      <rect x="9" y="29" width="7" height="7" rx="2.2"/>
+      <rect x="16" y="29" width="7" height="7" rx="2.2"/>
+      <rect x="23" y="22" width="7" height="7" rx="2.2"/>
+      <rect x="23" y="15" width="7" height="7" rx="2.2" fill="#8FF9B8"/>
+    </g>
+    <circle cx="12.5" cy="14.5" r="3.2" fill="#FF6B57"/>
+  </g>
+  <text x="124" y="76" fill="#6FA37E" font-family="'Silkscreen', monospace" font-size="17" letter-spacing="2.6">GRID ARCADE</text>
+  <text x="124" y="96" fill="#48705C" font-family="'Space Grotesk', sans-serif" font-size="13" letter-spacing="1.8">NO. 001 / SELF-HOSTED / OFFLINE</text>
+
+  <!-- wordmark -->
+  <text x="60" y="252" fill="#EAF6EC" font-family="'Silkscreen', monospace" font-size="126" letter-spacing="4">SNAKE</text>
+  <rect x="64" y="284" width="496" height="2" fill="#1E3327"/>
+  <text x="64" y="330" fill="#A7C3B0" font-family="'Space Grotesk', sans-serif" font-size="26" font-weight="400">A tiny, exact arcade classic.</text>
+
+  <!-- readout chips -->
+  <g font-family="'Silkscreen', monospace" font-size="17">
+    <rect x="64" y="372" width="196" height="46" rx="11" fill="#0E1A13" stroke="#27402F" stroke-width="1.5"/>
+    <text x="82" y="401" fill="#7FA98C">SCORE</text>
+    <text x="238" y="401" text-anchor="end" fill="#CFF3D9">0130</text>
+
+    <rect x="272" y="372" width="184" height="46" rx="11" fill="#0E1A13" stroke="#27402F" stroke-width="1.5"/>
+    <text x="290" y="401" fill="#7FA98C">BEST</text>
+    <text x="434" y="401" text-anchor="end" fill="#CFF3D9">0420</text>
+
+    <rect x="468" y="372" width="112" height="46" rx="11" fill="#12241A" stroke="#2F5B3D" stroke-width="1.5"/>
+    <text x="486" y="401" fill="#8FF9B8">TIER 3</text>
+  </g>
+
+  <!-- difficulty legend -->
+  <g font-family="'Space Grotesk', sans-serif" font-size="15" font-weight="500" fill="#6FA37E">
+    <text x="64" y="470" letter-spacing="1.6">CHILL</text>
+    <text x="148" y="470" letter-spacing="1.6" fill="#B7D8C2">CLASSIC</text>
+    <text x="252" y="470" letter-spacing="1.6">FRANTIC</text>
+    <g fill="#2B4A38">
+      <rect x="64" y="484" width="52" height="5" rx="2.5"/>
+      <rect x="148" y="484" width="66" height="5" rx="2.5" fill="#3FD07A"/>
+      <rect x="252" y="484" width="72" height="5" rx="2.5"/>
+    </g>
+  </g>
+
+  <text x="64" y="566" fill="#44685A" font-family="'Space Grotesk', sans-serif" font-size="15" letter-spacing="0.6">fixed-timestep sim / seeded rng / keyboard + swipe / zero network requests</text>
+  <rect x="1" y="1" width="1198" height="628" rx="10" fill="none" stroke="#1C3125" stroke-width="2"/>
+</svg>

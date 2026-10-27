@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="fav-title fav-desc">
+  <title id="fav-title">Snake</title>
+  <desc id="fav-desc">A pixel snake of five green cells turning up towards a red apple, on a dark rounded tile.</desc>
+  <rect width="32" height="32" rx="8" fill="#0B1310"/>
+  <g fill="#3FD07A">
+    <rect x="4.5" y="19.5" width="7.5" height="7.5" rx="2.4"/>
+    <rect x="12.5" y="19.5" width="7.5" height="7.5" rx="2.4"/>
+  </g>
+  <rect x="12.5" y="11.5" width="7.5" height="7.5" rx="2.5" fill="#8FF9B8"/>
+  <circle cx="17.6" cy="14.6" r="1.35" fill="#07120C"/>
+  <circle cx="24.5" cy="8.5" r="3.6" fill="#FF6B57"/>
+</svg>

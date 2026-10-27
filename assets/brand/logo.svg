@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-labelledby="logo-title logo-desc">
+  <title id="logo-title">Snake</title>
+  <desc id="logo-desc">A pixel snake of five green cells turning up towards a red apple, on a dark rounded tile.</desc>
+  <defs>
+    <linearGradient id="logo-body" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#157F47"/>
+      <stop offset="0.55" stop-color="#3FD07A"/>
+      <stop offset="1" stop-color="#8FF9B8"/>
+    </linearGradient>
+    <linearGradient id="logo-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#15291D"/>
+      <stop offset="1" stop-color="#0A1310"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="13" fill="url(#logo-bg)" stroke="#2B4C37" stroke-width="1.6"/>
+  <g fill="url(#logo-body)">
+    <rect x="8.5" y="32.5" width="7" height="7" rx="2.3"/>
+    <rect x="16.5" y="32.5" width="7" height="7" rx="2.3"/>
+    <rect x="24.5" y="32.5" width="7" height="7" rx="2.3"/>
+    <rect x="24.5" y="24.5" width="7" height="7" rx="2.3"/>
+    <rect x="24.5" y="16.5" width="7" height="7" rx="2.3"/>
+  </g>
+  <rect x="32.5" y="16.5" width="7" height="7" rx="2.4" fill="#8FF9B8"/>
+  <circle cx="37.2" cy="19.4" r="1.2" fill="#07120C"/>
+  <circle cx="12" cy="12" r="3.4" fill="#FF6B57"/>
+</svg>

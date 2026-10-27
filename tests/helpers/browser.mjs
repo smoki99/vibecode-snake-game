@@ -1,0 +1,183 @@
+/**
+ * Browser test scaffolding: an in-process static server plus a Chromium page wired to record
+ * console errors and every request it makes.
+ *
+ * Requests are recorded so tests can assert the runtime stays network-silent (the whole point of
+ * vendored fonts, icons and audio).
+ */
+import { createStaticServer } from '../../tools/static-server.mjs';
+import { loadPlaywright } from '../../tools/load-playwright.mjs';
+
+export const ROOT = new URL('../../', import.meta.url).pathname;
+
+export async function startServer({ root = ROOT } = {}) {
+  const app = createStaticServer({ root });
+  const url = await app.listen(0, '127.0.0.1');
+  return { url, close: () => app.close() };
+}
+
+export async function launchBrowser({ attempts = 3, retryDelayMs = 1500 } = {}) {
+  const { chromium } = await loadPlaywright();
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+    } catch (error) {
+      // A saturated host can refuse the fork Chromium needs; that is a wait-and-retry, not a failure.
+      lastError = error;
+      if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, retryDelayMs * attempt));
+    }
+  }
+  throw new Error(`Chromium refused to start after ${attempts} attempts: ${lastError?.message ?? lastError}`);
+}
+
+/**
+ * Open a page and start recording.
+ * @returns page, errors (console.error + pageerror + failed requests), requests (all URLs)
+ */
+export async function openPage(browser, url, { viewport, reducedMotion, permissions, colorScheme = 'dark' } = {}) {
+  const context = await browser.newContext({
+    viewport: viewport ?? { width: 1280, height: 900 },
+    reducedMotion,
+    colorScheme, // the page's default theme is 'auto', so pin what the system prefers means
+    deviceScaleFactor: 1,
+    permissions,
+  });
+  const page = await context.newPage();
+  const errors = [];
+  const requests = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') errors.push(`${message.type()}: ${message.text()}`);
+  });
+  page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
+  page.on('requestfailed', (request) => errors.push(`requestfailed: ${request.url()}`));
+  page.on('request', (request) => requests.push({ url: request.url(), type: request.resourceType() }));
+  // Generous on purpose: Playwright's 30 s default turns a CPU-starved host into a wall of
+  // unrelated timeouts. The node --test-timeout is the real backstop.
+  await page.goto(url, { waitUntil: 'load', timeout: 90_000 });
+  await page.waitForSelector('body[data-ready="1"]', { timeout: 30_000 });
+  return {
+    page,
+    context,
+    errors,
+    requests,
+    /** Requests that would leave the machine: http(s) origins other than the test server. */
+    externalRequests: () =>
+      requests.filter((entry) => /^https?:\/\//.test(entry.url) && !entry.url.startsWith(url.replace(/\/$/, ''))),
+  };
+}
+
+/** Read the game snapshot the page exposes at window.game (see src/main.js). */
+export const readState = (page) =>
+  page.evaluate(() => {
+    const game = window.game;
+    const state = game.state;
+    return {
+      status: state.status,
+      score: state.score,
+      eaten: state.eaten,
+      ticks: state.ticks,
+      length: state.snake.length,
+      head: { ...state.snake[0] },
+      snake: state.snake.map((cell) => ({ ...cell })),
+      food: state.food ? { ...state.food } : null,
+      dir: state.dir,
+      pending: [...state.pending],
+      difficulty: state.difficulty,
+      tickMs: state.tickMs,
+      tier: state.tier,
+      best: state.best,
+      seed: state.seed,
+      theme: document.documentElement.dataset.theme,
+      muted: game.muted,
+    };
+  });
+
+/** One simulation tick, driven by hand rather than by the wall clock. */
+export const pumpTick = (page) => page.evaluate(() => window.game.pump(window.game.state.tickMs));
+export const pumpTicks = async (page, count) => {
+  for (let i = 0; i < count; i += 1) await pumpTick(page);
+};
+
+/**
+ * Advance the simulation inside a single `page.evaluate`, so the page's own animation loop cannot
+ * interleave ticks between test actions. Scripted manoeuvres must run this way or the snake drifts
+ * while the test is thinking.
+ */
+export async function pumpUntilInPage(page, predicateSource, maxTicks = 400) {
+  return page.evaluate(
+    ([source, max]) => {
+      const predicate = new Function('state', `return Boolean((${source})(state))`);
+      let ticks = 0;
+      while (!predicate(window.game.state) && ticks < max) {
+        window.game.pump(window.game.state.tickMs);
+        ticks += 1;
+      }
+      return { satisfied: predicate(window.game.state), ticks };
+    },
+    [predicateSource, maxTicks],
+  );
+}
+
+/**
+ * Steer to and eat `count` apples entirely in-page, one legal turn per tick, pathing around the
+ * snake's own body. An optional `then(game)` runs in the same evaluate, so a follow-up manoeuvre
+ * cannot be disturbed by the page's own animation loop. Returns `{ eaten, after }`.
+ */
+export async function eatApples(page, count = 1, then = null) {
+  return page.evaluate(
+    ([n, followUp]) => {
+    const game = window.game;
+    const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+    const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
+    const key = (cell) => `${cell.x},${cell.y}`;
+
+    /** Breadth-first: the cell to step into first on a route from `from` to `to`. */
+    function firstStep(from, to, blocked) {
+      const queue = [from];
+      const seen = new Map([[key(from), null]]);
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (current.x === to.x && current.y === to.y) return seen.get(key(current));
+        for (const [, d] of Object.entries(DIRS)) {
+          const next = { x: current.x + d[0], y: current.y + d[1] };
+          const inBoard =
+            next.x >= 0 && next.y >= 0 && next.x < game.state.board.cols && next.y < game.state.board.rows;
+          if (!inBoard || blocked.has(key(next)) || seen.has(key(next))) continue;
+          seen.set(key(next), current === from ? next : seen.get(key(current)));
+          queue.push(next);
+        }
+      }
+      return null;
+    }
+
+    const trail = [];
+    for (let apple = 0; apple < n && game.state.status === 'playing'; apple += 1) {
+      let guard = 0;
+      while (game.state.status === 'playing' && guard < 600) {
+        guard += 1;
+        const head = game.state.snake[0];
+        if (head.x === game.state.food.x && head.y === game.state.food.y) break;
+        const blocked = new Set(game.state.snake.slice(0, -1).map(key));
+        const step = firstStep(head, game.state.food, blocked);
+        if (step === null) break;
+        const wanted =
+          Object.keys(DIRS).find((k) => DIRS[k][0] === step.x - head.x && DIRS[k][1] === step.y - head.y) ??
+          game.state.dir;
+        game.steer(wanted === OPPOSITE[game.state.dir] ? game.state.dir : wanted);
+        game.pump(game.state.tickMs);
+      }
+      trail.push({ length: game.state.snake.length, score: game.state.score, status: game.state.status });
+    }
+    const result = {
+      trail,
+      status: game.state.status,
+      score: game.state.score,
+      length: game.state.snake.length,
+      head: { ...game.state.snake[0] },
+    };
+    return { eaten: result, after: followUp ? followUp(game) : null };
+  },
+    [count, then],
+  );
+}
