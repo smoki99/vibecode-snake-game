@@ -90,6 +90,13 @@ deliberately loads the multi-file dev page, because that page's module graph, sp
 theme wiring are what it asserts. Both are served by the same static server on a random port;
 nothing in the suite binds a fixed port.
 
+Two defences against a contended CI host, both learned the hard way rather than designed in:
+`warmUp()` opens one throwaway page per file so the cost of Chromium's cold input pipeline is not
+charged to whichever test happens to run first (it is time-boxed, so a wedged warm-up cannot fail
+the file), and every keystroke goes through `press()`, which waits for a delivery counter that the
+test itself installs on `window` in the bubble phase — after the game's handler — so the wait proves
+the key arrived and was processed, without excusing any behaviour the assertions check.
+
 - **Unit** (`tests/unit`) — RNG determinism, state machine, every death rule and the
   tail-vacates exception, input buffering, food spawning away from the snake, difficulty curves,
   storage corruption, loop catch-up, and a layering guard that fails the build if `sim/` ever

@@ -75,14 +75,63 @@ export async function openPage(browser, url, { viewport, reducedMotion, permissi
  * that cost used to land on whichever test happened to run first — looking exactly like a game that
  * ignores the space bar. Absorbing it here makes per-test timings comparable.
  */
-export async function warmUp(browser, url) {
-  const { page } = await openPage(browser, url);
-  await page.keyboard.press('Space').catch(() => {});
-  await page.mouse.move(10, 10).catch(() => {});
-  await page.close().catch(() => {});
+export async function warmUp(browser, url, { budgetMs = 8_000 } = {}) {
+  const work = (async () => {
+    const { page } = await openPage(browser, url);
+    await page.keyboard.press('Space').catch(() => {});
+    await page.mouse.move(10, 10).catch(() => {});
+    await page.close().catch(() => {});
+  })();
+  // Best effort, and never longer than the budget: a warm-up that itself wedges must not be able to
+  // fail the whole file from inside the before hook.
+  const budget = new Promise((resolve) => {
+    const timer = setTimeout(resolve, budgetMs);
+    if (timer.unref) timer.unref();
+  });
+  await Promise.race([work.catch(() => {}), budget]);
 }
 
-/** Read the game snapshot the page exposes at window.game (see src/main.js). */export const readState = (page) =>
+/**
+ * Arm a keystroke delivery barrier on a page. Call once after opening it.
+ *
+ * The listener is added at boot time from the test, so it sits on `window` in the bubble phase
+ * *after* the game's own handler: when the counter moves, the game has already processed the key.
+ */
+export async function armKeys(page) {
+  await page.evaluate(() => {
+    window.__keysSeen = 0;
+    window.addEventListener('keydown', () => {
+      window.__keysSeen += 1;
+    });
+  });
+}
+
+/**
+ * Press a key and wait until the page has provably handled it, re-pressing if the wait expires.
+ *
+ * On a contended host Chromium's input acknowledgement can be late by tens of seconds and the first
+ * press of a session is sometimes dropped outright — the keystroke never reaches any listener, which
+ * looks exactly like a game that ignores the space bar. Waiting for the delivery counter (rather than
+ * sleeping) keeps the test's own assertions strict: this only guarantees the key arrived, never that
+ * the game behaved, and it costs ~1 ms when the browser is healthy.
+ */
+export async function press(page, keyName, { attempts = 3, timeoutMs = 30_000 } = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const before = await page.evaluate(() => window.__keysSeen ?? 0);
+    await page.keyboard.press(keyName);
+    try {
+      await page.waitForFunction((count) => (window.__keysSeen ?? 0) > count, before, { timeout: timeoutMs });
+      return attempt;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(`pressing ${keyName} ${attempts}× never reached the page: ${lastError?.message ?? lastError}`);
+}
+
+/** Read the game snapshot the page exposes at window.game (see src/main.js). */
+export const readState = (page) =>
   page.evaluate(() => {
     const game = window.game;
     const state = game.state;

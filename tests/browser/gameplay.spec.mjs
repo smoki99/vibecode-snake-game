@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  armKeys,
   eatApples,
   launchBrowser,
   openPage,
   pumpTick,
   pumpTicks,
+  press,
   pumpUntilInPage,
   readState,
   startServer,
@@ -51,7 +53,8 @@ const pad4 = (value) => String(value).padStart(4, '0');
 
 test('game: Space starts the run and the HUD goes live', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=play&theme=dark`);
-  await page.keyboard.press('Space');
+  await armKeys(page);
+  await press(page, 'Space');
   const state = await readState(page);
   assert.equal(state.status, 'playing');
   assert.equal(await page.getAttribute('#status-chip', 'data-status'), 'playing');
@@ -62,14 +65,15 @@ test('game: Space starts the run and the HUD goes live', async () => {
 
 test('game: arrow keys steer and a 180° reversal is refused', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=steer&theme=dark`);
-  await page.keyboard.press('Space');
-  await page.keyboard.press('ArrowUp');
+  await armKeys(page);
+  await press(page, 'Space');
+  await press(page, 'ArrowUp');
   await pumpTick(page);
   let state = await readState(page);
   assert.equal(state.dir, 'up');
   const headAfterUp = state.head;
 
-  await page.keyboard.press('ArrowDown'); // straight back into the neck: must be ignored
+  await press(page, 'ArrowDown'); // straight back into the neck: must be ignored
   await pumpTick(page);
   state = await readState(page);
   assert.equal(state.dir, 'up');
@@ -79,9 +83,10 @@ test('game: arrow keys steer and a 180° reversal is refused', async () => {
 
 test('game: a two-stage feint queued in one frame both lands', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=feint&theme=dark`);
-  await page.keyboard.press('Space'); // heading right
-  await page.keyboard.press('ArrowUp');
-  await page.keyboard.press('ArrowLeft');
+  await armKeys(page);
+  await press(page, 'Space'); // heading right
+  await press(page, 'ArrowUp');
+  await press(page, 'ArrowLeft');
   await pumpTicks(page, 2);
   const state = await readState(page);
   assert.equal(state.dir, 'left', 'the buffered turn must survive the tick that consumed the first');
@@ -90,7 +95,8 @@ test('game: a two-stage feint queued in one frame both lands', async () => {
 
 test('game: eating an apple grows the snake and updates the HUD', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=eat&theme=dark`);
-  await page.keyboard.press('Space');
+  await armKeys(page);
+  await press(page, 'Space');
   const { eaten } = await eatApples(page, 1);
   assert.equal(
     eaten.status,
@@ -106,7 +112,8 @@ test('game: eating an apple grows the snake and updates the HUD', async () => {
 
 test('game: hitting a wall ends the run, stores the best and offers a restart', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=wall&difficulty=frantic&theme=dark`);
-  await page.keyboard.press('Space');
+  await armKeys(page);
+  await press(page, 'Space');
   // Eat first: a scoreless run is never stored, so it would prove nothing about the best-score card.
   const { eaten } = await eatApples(page, 1);
   assert.equal(eaten.status, 'playing', `the apple should be reachable, got ${JSON.stringify(eaten.trail)}`);
@@ -124,7 +131,7 @@ test('game: hitting a wall ends the run, stores the best and offers a restart', 
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('snake.best.v1')));
   assert.equal(stored.frantic, after.score);
 
-  await page.keyboard.press('KeyR');
+  await press(page, 'KeyR');
   const restarted = await readState(page);
   assert.equal(restarted.status, 'playing');
   assert.equal(restarted.score, 0);
@@ -135,7 +142,8 @@ test('game: hitting a wall ends the run, stores the best and offers a restart', 
 
 test('game: self-collision is fatal and says so', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=self&theme=dark`);
-  await page.keyboard.press('Space');
+  await armKeys(page);
+  await press(page, 'Space');
   const { eaten, after } = await eatApples(page, 2, (game) => {
     const { cols, rows } = game.state.board;
     const marginOf = (cell) => Math.min(cell.x, cell.y, cols - 1 - cell.x, rows - 1 - cell.y);
@@ -200,13 +208,14 @@ test('game: self-collision is fatal and says so', async () => {
 
 test('game: P pauses, P resumes, and the overlay explains it', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=pause&theme=dark`);
-  await page.keyboard.press('Space');
-  await page.keyboard.press('KeyP');
+  await armKeys(page);
+  await press(page, 'Space');
+  await press(page, 'KeyP');
   assert.equal((await readState(page)).status, 'paused');
   assert.equal(await page.textContent('#overlay-title'), 'Paused');
   assert.ok((await page.textContent('#overlay-body')).includes('P'), 'the overlay must say how to resume');
 
-  await page.keyboard.press('Space');
+  await press(page, 'Space');
   assert.equal((await readState(page)).status, 'playing');
   assert.equal(await page.isVisible('#overlay'), false);
   await page.close();
@@ -214,8 +223,9 @@ test('game: P pauses, P resumes, and the overlay explains it', async () => {
 
 test('game: R restarts and keeps the chosen difficulty', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=again&difficulty=frantic&theme=dark`);
-  await page.keyboard.press('Space');
-  await page.keyboard.press('KeyR');
+  await armKeys(page);
+  await press(page, 'Space');
+  await press(page, 'KeyR');
   const state = await readState(page);
   assert.equal(state.status, 'playing');
   assert.equal(state.difficulty, 'frantic');
@@ -225,7 +235,8 @@ test('game: R restarts and keeps the chosen difficulty', async () => {
 
 test('game: changing difficulty mid-run restarts at that pace and keeps best scores separate', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=diff&theme=dark`);
-  await page.keyboard.press('Space');
+  await armKeys(page);
+  await press(page, 'Space');
   const classic = await readState(page);
   await page.click('input[value="frantic"]');
   const frantic = await readState(page);
@@ -243,6 +254,7 @@ test('game: changing difficulty mid-run restarts at that pace and keeps best sco
 
 test('game: the sound toggle persists across a reload', async () => {
   const { page, context } = await openPage(browser, `${APP()}/?seed=sound&theme=dark`);
+  await armKeys(page);
   await page.click('#sound-toggle');
   assert.equal(await page.getAttribute('#sound-toggle', 'aria-pressed'), 'true');
   const second = await context.newPage();
@@ -255,16 +267,17 @@ test('game: the sound toggle persists across a reload', async () => {
 
 test('game: the theme button and the T key both cycle and persist', async () => {
   const { page, context } = await openPage(browser, `${APP()}/?seed=theme&theme=dark`);
+  await armKeys(page);
   assert.equal(await page.getAttribute('#theme-toggle', 'data-theme'), 'dark');
   await page.click('#theme-toggle');
   assert.equal(await page.getAttribute('#theme-toggle', 'data-theme'), 'light');
   assert.equal(await page.getAttribute('html', 'data-theme'), 'light');
-  await page.keyboard.press('KeyT');
+  await press(page, 'KeyT');
   assert.equal(await page.getAttribute('html', 'data-theme'), 'auto');
-  await page.keyboard.press('KeyT');
+  await press(page, 'KeyT');
   assert.equal(await page.getAttribute('html', 'data-theme'), 'dark');
 
-  await page.keyboard.press('KeyT'); // → light, and this time it is remembered
+  await press(page, 'KeyT'); // → light, and this time it is remembered
   const second = await context.newPage();
   await second.goto(`${APP()}/?seed=theme`, { timeout: 90_000 });
   await second.waitForSelector('body[data-ready]', { timeout: 90_000 });
@@ -279,6 +292,7 @@ test('game: the d-pad and a swipe both drive the board on a touch viewport', asy
     hasTouch: true,
     isMobile: true,
   });
+  await armKeys(page);
   assert.equal(await page.isVisible('[data-dir="up"]'), true, 'the d-pad must appear on small screens');
   await page.tap('[data-dir="up"]');
   await page.tap('#overlay-primary');
@@ -300,7 +314,8 @@ test('game: the d-pad and a swipe both drive the board on a touch viewport', asy
 
 test('game: a long tab stall does not fast-forward the snake into a wall', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=stall&difficulty=chill&theme=dark`);
-  await page.keyboard.press('Space');
+  await armKeys(page);
+  await press(page, 'Space');
   const before = await readState(page);
   // One enormous frame: the loop must cap the catch-up instead of simulating nine seconds.
   const ticks = await page.evaluate(() => {
@@ -317,6 +332,7 @@ test('game: a long tab stall does not fast-forward the snake into a wall', async
 
 test('game: the same seed replays identically in the shipped bundle', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=replay&difficulty=frantic&theme=dark`);
+  await armKeys(page);
   const script = [
     'up', 'pump', 'pump', 'left', 'pump', 'pump', 'down', 'pump', 'pump', 'right', 'pump', 'pump',
     'up', 'pump', 'pump', 'left', 'pump', 'pump', 'down', 'pump', 'pump', 'pump', 'pump', 'right',
@@ -334,9 +350,9 @@ test('game: the same seed replays identically in the shipped bundle', async () =
       return JSON.stringify({ trace, head: game.state.snake[0], length: game.state.snake.length, score: game.state.score });
     }, script);
 
-  await page.keyboard.press('Space');
+  await press(page, 'Space');
   const first = await play();
-  await page.keyboard.press('KeyR');
+  await press(page, 'KeyR');
   const second = await play();
   assert.equal(second, first, 'identical seed + identical inputs must produce an identical run');
   await page.close();
