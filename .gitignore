@@ -7,6 +7,12 @@ node_modules/
 # Build scratch: esbuild intermediates, Playwright resolver cache, rendered previews.
 .build/
 
+# Secrets. The preview tunnel and GitHub pushes read tokens from the environment; a .env file here is
+# convenience only and must never reach the public remote.
+.env
+.env.*
+!.env.example
+
 # Local agent/tooling state, not project source.
 .claude/
 .pi/
