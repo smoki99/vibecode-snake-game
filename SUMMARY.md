@@ -34,7 +34,7 @@ All 25 skills from the `addy-osmani` pack are wired for both Claude Code and the
 | `npm run check` — unit + asset + build | **95 / 95 pass** | Re-verified at the end of this session. Sim invariants, every death rule, input buffering, RNG determinism, storage corruption, loop catch-up, palette contrast, icon/sprite/font/licence integrity, bundle freshness + size, and a layering guard that fails the build if `sim/` touches the DOM |
 | `tests/browser/app.spec.mjs` | **8 / 8 pass** (three separate runs this session) | Real Chromium: clean console, sprite injection, canvas actually paints the board/snake/apple (cell-targeted pixel sampling), DPR backing store, a11y surface, reduced motion, theme control labels, `?theme=` not persisted |
 | `tests/browser/gameplay.spec.mjs` | **4 / 14 pass** in the last run | The 4 that pass are the pure-logic ones (steering + reversal refusal, two-stage feint buffering, tab-stall cap, seeded replay) |
-| `tests/browser/standalone.spec.mjs` | not reached in the last run | Previously green: `file://` boot, playable from disk, 0 external requests |
+| `tests/browser/standalone.spec.mjs` (2) | not reached in the last run | Green in earlier full runs: `file://` boot with a single document request, playable from disk |
 
 ### The target was the bug
 
@@ -84,7 +84,7 @@ identical sequence (open bundle → arm → `page.keyboard.press('Space')` → r
   status and `#run-status` text (`"Run started."`) for the announcement.
 - Fix `pumpUntilInPage` to compile an expression (`return Boolean(SRC)` — no trailing `(state)`).
 - Serialise `eatApples`' follow-up function as source and compile it in-page.
-- Re-run `npm run test:all` and expect 95 + 25.
+- Re-run `npm run test:all` and expect 95 + 24.
 
 ---
 
@@ -114,6 +114,13 @@ identical sequence (open bundle → arm → `page.keyboard.press('Space')` → r
 - Gameplay tests now drive the **built bundle** over HTTP (one request instead of a ~30-module graph,
   and it is the artifact that ships); `app.spec.mjs` deliberately keeps the multi-file dev page.
 
+## 4b. Count correction
+
+This file and the README claimed a 120-test suite (95 + 25). Counting the declarations on disk:
+**95 headless + 24 browser = 119.** `standalone.spec.mjs` has two tests, not three; the 25 came from an
+earlier iteration of that file and the number was never re-measured after the rewrite. The per-test
+table in the session transcript is generated from the sources, not from this claim.
+
 ## 5. Known gaps — stated, not hidden
 
 - **Browser suite is not fully green yet.** Observed green at some point this session: all 8 of
@@ -130,7 +137,7 @@ identical sequence (open bundle → arm → `page.keyboard.press('Space')` → r
 npm run setup        # vendor fonts (idempotent)
 npm run build        # dist/snake-standalone.html
 npm run check        # 95 headless tests
-npm run test:browser # 25 Playwright tests (quiet machine recommended)
+npm run test:browser # 24 Playwright tests (quiet machine recommended)
 npm run test:all     # build + everything
 npm run serve        # dev server
 ```

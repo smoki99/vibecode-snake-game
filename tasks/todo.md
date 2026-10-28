@@ -48,7 +48,7 @@ Tick boxes are the working state; `[x]` means the code exists, is tested and is 
 - [x] `tests/unit` — sim, loop, palette, layering
 - [x] `tests/assets` — icon/sprite/font/licence integrity
 - [x] `tests/build` — bundle freshness, no network refs, embedded assets, size budget
-- [x] `tests/browser` — 25 Playwright tests: boot, paint, DPR, a11y, contrast, reduced motion,
+- [x] `tests/browser` — 24 Playwright tests: boot, paint, DPR, a11y, contrast, reduced motion,
       themes, steering, feints, eating, both deaths, pause, restart, difficulty, touch, stall cap,
       seeded replay, and the `file://` bundle
 - [x] Scripted manoeuvres run inside a single `page.evaluate` (`eatApples`, `pumpUntilInPage`) so the

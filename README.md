@@ -3,7 +3,7 @@
 A production-grade Snake: a fixed-timestep arcade game that boots from a single HTML file with no
 network access at all, and ships as a real multi-file ES-module project with a deterministic
 simulation core, an interpolated canvas renderer, vendored fonts, hand-authored SVG icons and
-artwork, theming, persistence and a 120-test automated suite (95 headless, 25 in a real browser).
+artwork, theming, persistence and a 119-test automated suite (95 headless, 24 in a real browser).
 
 > A temporary public preview of this build is linked at the end of this file — it is a throwaway
 > tunnel for review, not part of the project.
@@ -79,7 +79,7 @@ generated into `dist/brand/` for the contexts that require a bitmap.
 
 ```bash
 npm test          # 95 unit + asset + build tests, no browser, seconds
-npm run test:browser   # 25 Playwright tests against the dev build and the file:// bundle
+npm run test:browser   # 24 Playwright tests against the built bundle, the dev page and file://
 npm run test:all       # both
 ```
 
