@@ -107,6 +107,16 @@ Tick boxes are the working state; `[x]` means the code exists, is tested and is 
          visible does not auto-resume. New test overrides `document.hidden` before dispatching
          visibilitychange (a plain Event would have made it a test of nothing), asserts the clock froze
          and that coming back leaves it paused until the player presses P.
-- [x] T25: SPEC §testing now describes the harness that exists — `window.game` (live `state`, `pump`,
-      `steer`, `run`, `restart`, `resize`, `cycleTheme`) instead of the never-shipped `window.__snake`;
-      README's key table splits `Space` from `Enter` to match what each actually does
+- [x] T25: SPEC §testing describes the harness that exists. `window.__snake` is gone; `window.game` is
+      documented as the controller's own API with a live `state` getter and hand-driven `pump(ms)`, its
+      surface read off a running page rather than from a comment. Also fixed two follow-on lies this
+      exposed: the manual checklist still said "blur for 10 s mid-game" (contradicts T24's decision),
+      and README's test counts were stale at 95/24 — re-ran both suites to confirm 103 + 27 before
+      writing numbers down.
+- [ ] T26: finish what the last full run did not get to verify end-to-end — `npm run check` was seen at
+      103/103 headless and 117 browser passes with zero failures, but the command budget expired before
+      its final exit code; re-run to completion (since done: headless 103/103 EXIT=0 and browser 27/27
+      BEXIT=0 separately, so this is one green `check`, not unknown ground)
+- [ ] T27: decide the static server's path policy. It serves the whole workspace — `.git/` including
+      loose objects (a cloneable repo), `.build/`, `.claude/`, `*.log` — to whoever holds the tunnel
+      URL. One deny rule closes it; needs a yes/no because it changes what the preview can show
