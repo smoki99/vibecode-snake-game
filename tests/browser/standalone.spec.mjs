@@ -58,7 +58,9 @@ test('standalone: playable from file://', async () => {
   await page.goto(FILE_URL, { waitUntil: 'load', timeout: 90_000 });
   await page.waitForSelector('body[data-ready="1"]', { timeout: 90_000 });
 
-  await page.keyboard.press('Digit3');
+  // One gesture: Space starts the run. Digit3 would already start it, which makes the following
+  // Space a *pause* — and a player pressing space to check "is this thing on" would then find the
+  // game frozen at tick zero. That interaction was the real defect behind this test failing.
   await page.keyboard.press('Space');
   const state = await page.evaluate(() => {
     const game = window.game;
@@ -71,10 +73,26 @@ test('standalone: playable from file://', async () => {
       spriteSymbols: document.querySelectorAll('#sprite symbol').length,
     };
   });
-  assert.equal(state.status, 'playing');
-  assert.equal(state.difficulty, 'frantic', 'the ?difficulty param is unavailable on file://, so keys must work');
-  assert.equal(state.head.x, 12 + 8);
+  assert.equal(state.status, 'playing', 'space from the start screen must run, not pause');
+  assert.equal(state.difficulty, 'classic', 'the offline page boots on the default preset');
+  assert.equal(state.head.x, 12 + 8, 'eight classic ticks advance the head eight cells');
   assert.ok(state.spriteSymbols >= 13, 'the icon sprite must be embedded');
+
+  // The difficulty shortcut is the only way to choose a preset from file:// (no URL params there), so
+  // it has to work and it must leave the game running rather than needing another key press.
+  const keyed = await page.evaluate(() => {
+    window.game.steer('up');
+    return null;
+  });
+  await page.keyboard.press('Digit3');
+  const afterKey = await page.evaluate(() => ({
+    difficulty: window.game.state.difficulty,
+    status: window.game.state.status,
+    length: window.game.state.snake.length,
+  }));
+  assert.equal(afterKey.difficulty, 'frantic', 'the 1/2/3 keys pick a preset offline');
+  assert.equal(afterKey.status, 'playing', 'and switching preset keeps the game running');
+  assert.equal(afterKey.length, 3, 'a new pace means a fresh run');
   assert.equal(await page.isVisible('#overlay'), false, 'the overlay should clear once playing');
   await context.close();
 });

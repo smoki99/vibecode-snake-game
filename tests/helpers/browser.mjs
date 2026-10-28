@@ -35,13 +35,19 @@ export async function launchBrowser({ attempts = 3, retryDelayMs = 1500 } = {}) 
  * Open a page and start recording.
  * @returns page, errors (console.error + pageerror + failed requests), requests (all URLs)
  */
-export async function openPage(browser, url, { viewport, reducedMotion, permissions, colorScheme = 'dark' } = {}) {
+export async function openPage(
+  browser,
+  url,
+  { viewport, reducedMotion, permissions, colorScheme = 'dark', hasTouch = false, isMobile = false } = {},
+) {
   const context = await browser.newContext({
     viewport: viewport ?? { width: 1280, height: 900 },
     reducedMotion,
     colorScheme, // the page's default theme is 'auto', so pin what the system prefers means
     deviceScaleFactor: 1,
     permissions,
+    hasTouch, // drives `pointer: coarse`, which is what reveals the touch d-pad
+    isMobile,
   });
   const page = await context.newPage();
   const errors = [];
@@ -141,6 +147,9 @@ export const readState = (page) =>
       eaten: state.eaten,
       ticks: state.ticks,
       length: state.snake.length,
+      // Why a run ended ('wall' | 'self' | 'board-full'), straight from the sim's lastEvent, so the
+      // death tests can assert the cause instead of inferring it from the headline text.
+      reason: state.lastEvent?.reason ?? null,
       head: { ...state.snake[0] },
       snake: state.snake.map((cell) => ({ ...cell })),
       food: state.food ? { ...state.food } : null,
@@ -170,7 +179,11 @@ export const pumpTicks = async (page, count) => {
 export async function pumpUntilInPage(page, predicateSource, maxTicks = 400) {
   return page.evaluate(
     ([source, max]) => {
-      const predicate = new Function('state', `return Boolean((${source})(state))`);
+      // `predicateSource` is an EXPRESSION in which `state` is the live snapshot — e.g.
+      // "state.status !== 'playing'". Build it as `return Boolean(<expr>)`; wrapping it as
+      // `(<expr>)(state)` instead calls a boolean and throws "state.status is not a function",
+      // which surfaces as an unexplained evaluate failure rather than a failed assertion.
+      const predicate = new Function('state', `return Boolean(${source})`);
       let ticks = 0;
       while (!predicate(window.game.state) && ticks < max) {
         window.game.pump(window.game.state.tickMs);
@@ -188,8 +201,12 @@ export async function pumpUntilInPage(page, predicateSource, maxTicks = 400) {
  * cannot be disturbed by the page's own animation loop. Returns `{ eaten, after }`.
  */
 export async function eatApples(page, count = 1, then = null) {
+  // `page.evaluate` serialises its argument, so a callback cannot be passed directly — it arrives as
+  // `{}` and the follow-up silently never runs (the test then reads a snake that was never steered).
+  // Send its source and revive it in-page.
+  const followUpSource = typeof then === 'function' ? `(${then.toString()})` : null;
   return page.evaluate(
-    ([n, followUp]) => {
+    ([n, followUpSource]) => {
     const game = window.game;
     const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
     const OPPOSITE = { up: 'down', down: 'up', left: 'right', right: 'left' };
@@ -243,8 +260,17 @@ export async function eatApples(page, count = 1, then = null) {
       length: game.state.snake.length,
       head: { ...game.state.snake[0] },
     };
-    return { eaten: result, after: followUp ? followUp(game) : null };
+    let followResult = null;
+    if (followUpSource !== null) {
+      const followUp = new Function(`return (${followUpSource})`)();
+      // A follow-up may return a Promise (e.g. one that resolves when the overlay gains its status).
+      // The result is serialised by Playwright, so await it here rather than handing back a Promise
+      // object that reduces to `{}`.
+      followResult = followUp(game);
+      if (followResult && typeof followResult.then === 'function') return { eaten: result, after: followResult };
+    }
+    return { eaten: result, after: followResult };
   },
-    [count, then],
+    [count, followUpSource],
   );
 }
