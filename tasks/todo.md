@@ -83,5 +83,18 @@ Tick boxes are the working state; `[x]` means the code exists, is tested and is 
 - [x] New coverage for the fixes: first-frame baseline + reset re-baseline (`loop.spec.mjs`), and
       idle/paused/over heading queueing (`step.spec.mjs`)
 - [x] `npm run check` exits 0 — 98 headless + 24 browser = 122 tests, 0 failures
-- [ ] T23: `tests/build/dom-contract.spec.mjs` — extract selector literals from the browser specs and
-      assert each resolves in `index.html`, plus a mutation probe, so this failure class cannot return
+- [x] T23: `tests/build/dom-contract.spec.mjs` — every selector, attribute and live-state key the
+      browser specs name is checked against what the page provides (markup + generated sprite ids +
+      attributes src actually sets), statically, in ~50 ms, inside `npm test`
+- [x] T23 follow-ups found while writing it:
+      1. `standalone.spec.mjs` called `readState()` without importing it — a ReferenceError that read
+         as "the file:// bundle won't play". There is now a contract test for helper calls that are
+         not imported, and I proved it catches the bug by deleting the import again.
+      2. Three SPEC coverage promises had no test behind them: WASD (now proven, along with the
+         `hjkl` bindings README advertises), `Enter` to start, and blur auto-pause — see T24/T25.
+- [ ] T24: prove or drop the remaining SPEC coverage promises — `Enter` starts (there is a real
+      `<button id="overlay-primary">`, so keyboard Enter should activate it; test that path), and blur
+      auto-pause (implementation deliberately pauses only on `document.hidden`; either implement blur
+      or correct SPEC §testing)
+- [ ] T25: correct SPEC's stale test-harness description — it names `window.__snake = {state, tick}`,
+      which the game never shipped; the real handle is `window.game`

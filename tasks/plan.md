@@ -298,7 +298,7 @@ playable from there — every later task changes quality, never viability.
   **Verify:** `npm run check` → exit 0, 98 headless + 24 browser.
   **Depends:** none · **Files:** `tests/browser/*.spec.mjs`, `tests/helpers/browser.mjs`, `src/ui/{loop,controller,input,hud}.js`, `src/sim/step.js` · **Size:** M
 
-- [ ] **T23: Contract test that fails the moment a spec drifts from the DOM**
+- [x] **T23: Contract test that fails the moment a spec drifts from the DOM**
   New `tests/build/dom-contract.spec.mjs`: extract every `#id` / `[data-*]` / class literal from
   `tests/browser/*.spec.mjs` and assert each resolves in `index.html`; assert every property read off a
   `readState()` result is one of the keys the helper returns. Includes a mutation probe (inject a bogus
