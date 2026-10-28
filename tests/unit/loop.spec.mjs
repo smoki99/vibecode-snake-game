@@ -90,6 +90,68 @@ test('loop: reset() drops accumulated time so a pause never fast-forwards the sn
   assert.equal(ticks, 1, 'the next full step still ticks normally');
 });
 
+test('loop: the first frame after start() only sets a baseline, it never fast-forwards', () => {
+  // The bug this guards: rAF can be held back for seconds while a page is unfocused or the host is
+  // loaded. If that gap is charged as elapsed time, a fresh run ticks dozens of times before the
+  // player sees anything — at frantic speed a brand-new snake dies before its first visible frame.
+  const clock = createClock(0);
+  let ticks = 0;
+  const renders = [];
+  const loop = createLoop({
+    getStepMs: () => 100,
+    now: clock.now,
+    requestFrame: (cb) => {
+      // Deliver the frame by hand so the test controls how long rAF took to come back.
+      loop.__frame = cb;
+      return 1;
+    },
+    cancelFrame: () => {},
+    onTick: () => {
+      ticks += 1;
+    },
+    onRender: (alpha) => renders.push(alpha),
+  });
+
+  loop.start();
+  clock.set(4000); // rAF came back four seconds later
+  loop.__frame(clock.now());
+  assert.equal(ticks, 0, 'the start-to-first-frame gap is not game time');
+  assert.equal(renders.length, 1, 'it still renders the frame');
+
+  clock.set(4100); // one honest step after the baseline
+  loop.__frame(clock.now());
+  assert.equal(ticks, 1, 'normal stepping resumes from the new baseline');
+  loop.stop();
+});
+
+test('loop: reset() re-baselines the next frame too', () => {
+  const clock = createClock(0);
+  let ticks = 0;
+  const loop = createLoop({
+    getStepMs: () => 100,
+    now: clock.now,
+    requestFrame: (cb) => {
+      loop.__frame = cb;
+      return 1;
+    },
+    cancelFrame: () => {},
+    onTick: () => {
+      ticks += 1;
+    },
+    onRender: () => {},
+  });
+  loop.start();
+  loop.__frame(clock.now());
+  clock.set(9000); // a long stall, then an explicit resume
+  loop.reset();
+  loop.__frame(clock.now());
+  assert.equal(ticks, 0, 'the gap around a resume must not be charged');
+  clock.set(9100);
+  loop.__frame(clock.now());
+  assert.equal(ticks, 1);
+  loop.stop();
+});
+
 test('loop: start() uses the injected scheduler and is idempotent', () => {
   const clock = createClock(5);
   let scheduled = 0;

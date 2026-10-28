@@ -49,12 +49,27 @@ export function createLoop({ onTick, onRender, getStepMs, now = () => performanc
   let last = 0;
   let running = false;
   let handle = 0;
+  let baselinePending = false;
   const schedule = requestFrame ?? ((cb) => requestAnimationFrame(cb));
   const unschedule = cancelFrame ?? ((h) => cancelAnimationFrame(h));
 
   function frame(timestamp) {
     if (!running) return;
     const t = typeof timestamp === 'number' ? timestamp : now();
+    // The first frame after start()/reset() is a baseline, not elapsed time. requestAnimationFrame can
+    // be held back for seconds while a page is unfocused or the machine is loaded, and that gap is not
+    // game time: treating it as such fast-forwarded the snake the instant it began, which at frantic
+    // speed meant a fresh run died before the player saw a frame. The loop already refuses to charge
+    // for paused time on resume (reset()); this is the same rule applied to the first frame.
+    if (baselinePending) {
+      baselinePending = false;
+      last = t;
+      // Still paint this frame: the player must see the current state even on a frame that is not
+      // allowed to advance the simulation.
+      onRender(0, 0);
+      handle = schedule(frame);
+      return;
+    }
     const elapsed = Math.max(0, t - last);
     last = t;
     const stepMs = getStepMs();
@@ -70,6 +85,7 @@ export function createLoop({ onTick, onRender, getStepMs, now = () => performanc
       if (running) return;
       running = true;
       accumulator = 0;
+      baselinePending = true; // the first frame only establishes `last`
       last = now();
       handle = schedule(frame);
     },
@@ -81,6 +97,7 @@ export function createLoop({ onTick, onRender, getStepMs, now = () => performanc
     /** Drop accumulated time: used on resume so a pause never fast-forwards the snake. */
     reset() {
       accumulator = 0;
+      baselinePending = true; // ditto: the next frame re-baselines instead of charging the gap
       last = now();
     },
     /** Drive one frame by hand (tests, deterministic replays). */
