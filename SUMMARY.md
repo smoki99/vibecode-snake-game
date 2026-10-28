@@ -36,6 +36,21 @@ All 25 skills from the `addy-osmani` pack are wired for both Claude Code and the
 | `tests/browser/gameplay.spec.mjs` | **4 / 14 pass** in the last run | The 4 that pass are the pure-logic ones (steering + reversal refusal, two-stage feint buffering, tab-stall cap, seeded replay) |
 | `tests/browser/standalone.spec.mjs` | not reached in the last run | Previously green: `file://` boot, playable from disk, 0 external requests |
 
+### The target was the bug
+
+`gameplay.spec.mjs` was written against markup that never existed — **11 references to six invented
+selectors**, present since the very first commit (`git show 828898c:tests/browser/gameplay.spec.mjs`).
+`app.spec.mjs` and `standalone.spec.mjs` were written against the real ids in the same commit, which is
+why they were green and gameplay was not. Consequence, stated plainly: **those ten gameplay tests were
+never green in this session** — an early "10/11" reading came from counting lines in a file-level
+failure report instead of reading it. A missing locator is a silent 30 s wait, and I read that as
+"the sandbox is starving Playwright" rather than "this element does not exist".
+
+Two process errors, worth keeping as lessons: (1) I asserted on markup I had not verified against
+`index.html`; (2) I theorised about the environment for an hour before getting the one command that
+prints the actual error (`node --test --test-name-pattern …`, whose output node's spec reporter only
+emits at the end of the file — so the run had to *finish* before it could tell the truth).
+
 ### Root cause of the gameplay failures — found at the end, and it is my test code, not the game
 
 I spent far too long blaming this sandbox (load average ~10, container clock advancing seconds per
@@ -47,6 +62,10 @@ output from the completed run names mundane test bugs:
    `#overlay[data-status]`, `#apples`, `#score`, `#best`, `#sound-btn`, `#theme-btn[data-active]`.
    A missing locator is a silent 30 s wait, which is exactly the "environment" symptom I chased.
    `app.spec.mjs` and `standalone.spec.mjs` use the real ids, which is why they were green all along.
+   Switching the gameplay target from the dev page to the built bundle mid-session was a reasonable
+   optimisation that made the diagnosis worse, not better: it gave a plausible-sounding reason for the
+   failures ("the bundle must behave differently") and sent me probing bundle-vs-dev differences when
+   the answer was in the assertion lines. The bundle target itself is sound and is kept.
 2. **`#board` aria-label assertion** expects a dynamic label; the shipped label is static
    (`"Snake board. Use the readout below for score and status."`) and the live region carries status.
 3. **`pumpUntilInPage` calls the predicate's *value*:** `new Function('state', 'return Boolean((SRC)(state))')`
@@ -97,8 +116,9 @@ identical sequence (open bundle → arm → `page.keyboard.press('Space')` → r
 
 ## 5. Known gaps — stated, not hidden
 
-- **Browser suite is not fully green yet.** 21 of 25 verified green at various points this session;
-  the 10 gameplay failures above are test-code bugs with a known fix, found too late in the session.
+- **Browser suite is not fully green yet.** Observed green at some point this session: all 8 of
+  `app.spec`, all 3 of `standalone.spec`, and 4 of the 14 `gameplay.spec` tests — never all 25 in one
+  run. The 10 gameplay failures are test-code bugs with a known fix, found too late in the session.
 - SPEC §11: 120 Hz glide is `[~]` — fixed timestep + interpolation are covered by the stall test, but
   no 120 Hz hardware was available to eyeball it.
 - The tunnel is a review convenience, not part of the project; `npm run build` and the bundle are the
