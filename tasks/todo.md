@@ -64,3 +64,24 @@ Tick boxes are the working state; `[x]` means the code exists, is tested and is 
 - [x] tasks/todo.md final state
 - [x] Temporary Cloudflare preview (throwaway, documented as such)
 - [x] Scratch/diagnostic tools removed
+
+## Phase 7 — Test-suite trustworthiness (T22 complete)
+- [x] `tests/browser` made honest: 10 failures traced to invented selectors and to four assertions
+      that compared `undefined === undefined` (`snakeLength` where the helper returns `length`)
+- [x] Helper contract fixed: `readState()` exposes `reason`; `pumpUntilInPage` compiles predicates as
+      an expression; `eatApples` serialises its follow-up as source and awaits a returned Promise;
+      `openPage` forwards `hasTouch`/`isMobile` so `pointer: coarse` reveals the d-pad
+- [x] Five shipped defects found once those assertions could actually fail:
+      1. `setDifficulty()` stopped the loop it had just started — game frozen at tick zero, and Space
+         read as "pause" so no key could recover it
+      2. The loop charged the start-to-first-frame rAF gap as elapsed time — a fresh frantic run
+         simulated ~37 ticks before its first visible frame and died unseen
+      3. `turn()` refused to queue while idle, so a d-pad tap before starting never turned the snake
+      4. `pause()` bailed whenever the loop was stopped, disabling the one key meant to recover it
+      5. `#sound-btn` reported `aria-pressed` for "muted" under an accessible name of "Sound", so it
+         read pressed exactly when sound was off
+- [x] New coverage for the fixes: first-frame baseline + reset re-baseline (`loop.spec.mjs`), and
+      idle/paused/over heading queueing (`step.spec.mjs`)
+- [x] `npm run check` exits 0 — 98 headless + 24 browser = 122 tests, 0 failures
+- [ ] T23: `tests/build/dom-contract.spec.mjs` — extract selector literals from the browser specs and
+      assert each resolves in `index.html`, plus a mutation probe, so this failure class cannot return

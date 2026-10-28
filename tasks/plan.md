@@ -286,6 +286,26 @@ playable from there — every later task changes quality, never viability.
   **Verify:** `node --test tests/browser/svg-renderer.spec.mjs`.
   **Depends:** T12, T16 · **Files:** `src/render/svg.js`, `tests/browser/svg-renderer.spec.mjs` · **Size:** M
 
+### Phase 7 — Test-suite trustworthiness
+
+- [x] **T22: Browser specs name only things that exist**
+  Six invented selectors (11 sites) and the wrong state key were the entire browser failure set; four
+  further assertions compared `undefined === undefined` and had been passing vacuously.
+  **Acceptance:** `npm run test:browser` green on three consecutive runs; no assertion reads a key that
+  `readState()` does not return. **Met** — 24/24, plus five shipped defects found (loop fast-forward on
+  start, difficulty preset killing its own clock, idle heading refused, unpausable frozen game, sound
+  button's inverted `aria-pressed`). Two new unit tests cover the loop and queueing fixes.
+  **Verify:** `npm run check` → exit 0, 98 headless + 24 browser.
+  **Depends:** none · **Files:** `tests/browser/*.spec.mjs`, `tests/helpers/browser.mjs`, `src/ui/{loop,controller,input,hud}.js`, `src/sim/step.js` · **Size:** M
+
+- [ ] **T23: Contract test that fails the moment a spec drifts from the DOM**
+  New `tests/build/dom-contract.spec.mjs`: extract every `#id` / `[data-*]` / class literal from
+  `tests/browser/*.spec.mjs` and assert each resolves in `index.html`; assert every property read off a
+  `readState()` result is one of the keys the helper returns. Includes a mutation probe (inject a bogus
+  selector into a temp copy, assert the test fails) in the style of `layering.spec`.
+  **Acceptance:** green today; red on an injected selector.
+  **Verify:** `node --test tests/build/` · **Depends:** T22 · **Files:** `tests/build/dom-contract.spec.mjs` · **Size:** M
+
 ## Parallelization
 
 - **Safe in parallel:** T1, T2, T3 (independent assets); tests for T5–T10 can be written before their
