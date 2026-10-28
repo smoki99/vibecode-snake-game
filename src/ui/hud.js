@@ -142,6 +142,9 @@ export function createHud({ dom, announce = () => {} }) {
       setText(dom.pauseLabel, paused ? 'Resume' : 'Pause');
     }
     if (dom.soundBtn) {
+      // The button's accessible name is "Sound", so `aria-pressed` must read as *that* state:
+      // pressed = sound on. It starts unpressed because the game boots muted, and it flips the
+      // moment the player turns audio on. (`?muted=0` starts sounding, so it starts pressed too.)
       dom.soundBtn.setAttribute('aria-pressed', api.muted ? 'false' : 'true');
       const use = dom.soundBtn.querySelector('use');
       if (use) use.setAttribute('href', api.muted ? '#icon-sound-off' : '#icon-sound-on');

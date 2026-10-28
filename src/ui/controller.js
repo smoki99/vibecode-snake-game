@@ -155,8 +155,26 @@ export function createGame(deps) {
       hudRefresh();
       return api;
     },
-    pause() {
-      if (!loop.running) return api;
+    /**
+     * Freeze the run.
+     *
+     * `fromVisibility` marks the one case where stopping the clock is the whole point: the tab went
+     * hidden, so nothing may advance while the player is away. A deliberate key press is different —
+     * it has to pause even if the loop was somehow left stopped, otherwise the game looked frozen at
+     * zero ticks while no key could bring it back (the difficulty shortcut starts a run without
+     * starting the loop, which hit exactly this).
+     */
+    /**
+     * Freeze the run.
+     *
+     * `force` is what a deliberate key press or click uses: it stops the clock even when the loop was
+     * somehow left idle (a state can read 'playing' with no frame scheduled behind it, and without this
+     * the player has no way back in). Without it only the tab going hidden may pause, because pausing a
+     * game that is not running would leave an overlay nobody asked for.
+     */
+    pause({ force = false, fromVisibility = false } = {}) {
+      if (!force && !fromVisibility) return api;
+      if (fromVisibility && !loop.running) return api;
       const next = pause(state);
       if (next === state) return api;
       state = next;
@@ -165,6 +183,10 @@ export function createGame(deps) {
       hudRefresh();
       draw(1, state);
       return api;
+    },
+    /** Explicit pause from a click or `api.pause()` — always honoured. */
+    pauseGame() {
+      return api.pause({ force: true });
     },
     resume() {
       const next = resume(state);
@@ -179,7 +201,9 @@ export function createGame(deps) {
     togglePause() {
       if (state.status === 'idle') return api.run();
       if (state.status === 'over') return api.restart();
-      return state.status === 'playing' ? api.pause() : api.resume();
+      if (state.status === 'playing') return api.pause({ force: true });
+      // A playing-looking state with a stopped loop still has to come back: resume() restarts it.
+      return api.resume();
     },
     restart(options = {}) {
       const seedNext = options.seed ?? state.seed;
@@ -199,7 +223,11 @@ export function createGame(deps) {
       return api;
     },
     steer(direction) {
-      if (!isLive(state)) return api;
+      // Idle still queues: tapping the d-pad before starting should set the opening heading (the
+      // keyboard already does this — it calls run() then steer()). A reversal against the start
+      // heading is refused by pushTurn, so pressing left on a snake facing right arms nothing rather
+      // than killing the run on tick one. Finished runs stay inert.
+      if (state.status !== 'idle' && !isLive(state)) return api;
       const next = turn(state, direction);
       if (next !== state) {
         state = next;
@@ -208,15 +236,15 @@ export function createGame(deps) {
       return api;
     },
     setDifficulty(id) {
-      const preset = presetFor(id);
-      writeSettings(storage, { difficulty: preset.id });
-      const best = readBest(storage, preset.id);
-      state = restartWith(state, { seed: state.seed, difficulty: preset.id, best });
-      loop.stop();
-      lastTier = state.tier;
-      lastStatus = state.status;
-      hudRefresh();
-      draw(1, state);
+      // Same shape as restart(): persist the preset, then start a fresh run at that pace and drive the
+      // loop from it. Reusing the current seed keeps a replay comparable — which is what makes the
+      // per-difficulty best scores separable in tests and in play.
+      const presetId = presetFor(id).id;
+      writeSettings(storage, { difficulty: presetId });
+      // restart() starts a fresh run AND drives the loop. The old version stopped the loop afterwards,
+      // which left a playing-looking state with no clock behind it: frozen at zero ticks, and Space
+      // then read as "pause" so nothing on screen could bring it back.
+      api.restart({ seed: state.seed, difficulty: presetId });
       emit('difficulty');
       return api;
     },

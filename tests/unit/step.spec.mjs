@@ -152,6 +152,17 @@ test('step: intents are legal-transition only', () => {
   assert.equal(resume(dead), dead);
 });
 
+test('step: an opening heading can be armed while standing by, but not while paused or dead', () => {
+  const idle = createState({ seed: 'arm' });
+  assert.equal(idle.status, STATUS.idle);
+  assert.deepEqual(turn(idle, 'up').pending, ['up'], 'idle queues the opening heading');
+  assert.deepEqual(turn(idle, 'left').pending, [], 'a reversal of the start heading is still refused');
+
+  const over = { ...start(idle), status: STATUS.over };
+  assert.deepEqual(turn(over, 'up').pending, [], 'a finished run accepts no input');
+  assert.deepEqual(turn(pause(start(idle)), 'up').pending, [], 'neither does a paused one');
+});
+
 test('step: turn() queues legal turns and drops reversals', () => {
   const state = playing({ dir: 'right', pending: [] });
   assert.deepEqual(turn(state, 'up').pending, ['up']);

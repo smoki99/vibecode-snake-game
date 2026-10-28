@@ -131,9 +131,12 @@ export const resume = (state) =>
     ? { ...state, status: STATUS.playing, lastEvent: { type: 'resume', at: state.ticks } }
     : state;
 
-/** Queue a steering key. Legal/reversal decisions live in steering.js. */
+/** Queue a turn. */
 export const turn = (state, dirName) =>
-  state.status === STATUS.playing
+  // Queued while playing, and also while standing by: arming the opening heading before the run
+  // starts is real behaviour for both the keyboard and the d-pad. `pushTurn` validates it against the
+  // start heading either way, so pressing left on a snake facing right queues nothing.
+  state.status === STATUS.playing || state.status === STATUS.idle
     ? { ...state, pending: pushTurn(state.pending, dirName, state.dir) }
     : state;
 

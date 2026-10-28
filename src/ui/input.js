@@ -108,6 +108,9 @@ export function bindInput({ api, dom, onFirstGesture }) {
       const press = (event) => {
         event.preventDefault();
         fireGesture();
+        // Order matters: queue first, then start. Reversing it lets the tick that begins the run
+        // consume the tap immediately, so a d-pad press made while idle looked ignored and the snake
+        // never visibly turned the way the player had just tapped.
         api.steer(dir);
         if (api.state.status === 'idle') api.run();
       };
@@ -201,7 +204,8 @@ export function bindInput({ api, dom, onFirstGesture }) {
   bindSwipe();
 
   const onVisibility = () => {
-    if (document.hidden && api.state.status === 'playing') api.pause();
+    // Only the tab going hidden pauses by itself, and only when the clock is actually running.
+    if (document.hidden && api.state.status === 'playing') api.pause({ fromVisibility: true });
   };
   document.addEventListener('visibilitychange', onVisibility);
 
