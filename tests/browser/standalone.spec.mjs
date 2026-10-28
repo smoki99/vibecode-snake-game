@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { launchBrowser, startServer, warmUp } from '../helpers/browser.mjs';
+import { launchBrowser, readState, startServer, warmUp } from '../helpers/browser.mjs';
 
 /**
  * The offline promise: open dist/snake-standalone.html straight from the filesystem, with no server
@@ -80,16 +80,8 @@ test('standalone: playable from file://', async () => {
 
   // The difficulty shortcut is the only way to choose a preset from file:// (no URL params there), so
   // it has to work and it must leave the game running rather than needing another key press.
-  const keyed = await page.evaluate(() => {
-    window.game.steer('up');
-    return null;
-  });
   await page.keyboard.press('Digit3');
-  const afterKey = await page.evaluate(() => ({
-    difficulty: window.game.state.difficulty,
-    status: window.game.state.status,
-    length: window.game.state.snake.length,
-  }));
+  const afterKey = await readState(page);
   assert.equal(afterKey.difficulty, 'frantic', 'the 1/2/3 keys pick a preset offline');
   assert.equal(afterKey.status, 'playing', 'and switching preset keeps the game running');
   assert.equal(afterKey.length, 3, 'a new pace means a fresh run');
