@@ -162,6 +162,12 @@ cannot run) and each file's count is capped, so that surface cannot grow silentl
 
 ## Temporary preview
 
-`https://appliance-chef-stories-clothing.trycloudflare.com` — a throwaway `cloudflared`
+`https://bufing-vocals-albums-registrar.trycloudflare.com` — a throwaway `cloudflared`
 tunnel to the dev server for review. It dies with this sandbox and is not a deployment; the game
-itself has no server-side component.
+itself has no server-side component. The URL changes every time the tunnel restarts, so treat it as
+a link you will be handed again rather than a bookmark.
+
+The tunnel forwards a static file server rooted at this workspace, which means anything in it is
+reachable by path — including `.git/`, `.build/` and log files. That is a known limit of the preview,
+not of the game: the shipped artifact is `dist/snake-standalone.html`, and it makes zero network
+requests.
