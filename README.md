@@ -138,6 +138,6 @@ the key arrived and was processed, without excusing any behaviour the assertions
 
 ## Temporary preview
 
-`https://select-respiratory-breakfast-cheapest.trycloudflare.com` — a throwaway `cloudflared`
+`https://apollo-king-ultram-doug.trycloudflare.com` — a throwaway `cloudflared`
 tunnel to the dev server for review. It dies with this sandbox and is not a deployment; the game
 itself has no server-side component.
