@@ -236,13 +236,21 @@ Two layers, because "it renders" and "the rules are right" are different claims.
   corrupt values.
 - **Browser (real events, real canvas):** Playwright Chromium against `http://localhost:<port>/index.html`
   (static server started by the test harness) and, for the bundle, `file:///workspace/dist/snake-standalone.html`.
-  Covers: no console errors on load or play, `Enter` starts, arrow keys and WASD both steer, swipe
-  steers, `Space`/`Escape` pause and resume, blur auto-pauses, restart returns to a fresh 3-cell
+  Covers: no console errors on load or play, arrow keys / WASD / home-row (`hjkl`) all steer, a
+  keyboard-only player can Tab to Start and press `Enter` to run it, `Space` starts and toggles pause,
+  `P`/`Escape` pause and resume, the tab going hidden pauses a running game and becoming visible again
+  does not resume it, swipe and the d-pad steer on a coarse pointer, restart returns to a fresh 3-cell
   snake, high score survives reload, `aria-live` announces game over, contrast of HUD text,
   0 requests to any origin other than the file itself.
-- **Determinism in browser tests:** drive with `?seed=` and expose a test-only
-  `window.__snake = { state: () => snapshot(), tick: (n) => … }` (10 lines, documented in the file)
-  so tests assert on state rather than pixels. Pixel assertions are limited to "canvas is not blank"
+
+  Two earlier promises were corrected rather than implemented. "blur auto-pauses" is narrower in the
+  shipped game: only `document.hidden` pauses, because a window blur also fires when focus moves to
+  devtools or a second monitor, which would pause on interactions that are not "I left". And `Enter` is
+  not a global start key — it belongs to the focused control, so the overlay's real `<button>` activates
+  with it and the handler deliberately hands the keystroke back.
+- **Determinism in browser tests:** drive with `?seed=` and use the debug handle the page already
+  exposes, `window.game` — live `state`, plus `pump(ms)` to advance the simulation by hand and `steer`,
+  `run`, `restart`, `resize`, `cycleTheme`. Tests assert on state rather than pixels through it. Pixel assertions are limited to "canvas is not blank"
   plus a golden screenshot kept for human eyeballs, not asserted on byte equality.
 - **Manual checklist** (documented at the bottom of `SPEC.md`, run once before "done"): keyboard-only
   full run, phone swipe run at 390 px, reduced-motion run, blur for 10 s mid-game, 120 Hz display

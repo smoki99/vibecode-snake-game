@@ -26,7 +26,8 @@ edit `src/`, then `npm run build` regenerates it.
 | Key | Action |
 | --- | --- |
 | `↑↓←→` `wasd` `hjkl` | Steer (buffered, reversal-safe) |
-| `Space` `Enter` | Start / resume |
+| `Space` | Start, or pause and resume |
+| `Enter` | Activate the focused button (Tab reaches Start first) |
 | `P` `Esc` | Pause |
 | `R` | New run, same difficulty |
 | `1` `2` `3` | Difficulty: chill, classic, frantic |

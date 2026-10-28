@@ -92,9 +92,21 @@ Tick boxes are the working state; `[x]` means the code exists, is tested and is 
          not imported, and I proved it catches the bug by deleting the import again.
       2. Three SPEC coverage promises had no test behind them: WASD (now proven, along with the
          `hjkl` bindings README advertises), `Enter` to start, and blur auto-pause — see T24/T25.
-- [ ] T24: prove or drop the remaining SPEC coverage promises — `Enter` starts (there is a real
-      `<button id="overlay-primary">`, so keyboard Enter should activate it; test that path), and blur
-      auto-pause (implementation deliberately pauses only on `document.hidden`; either implement blur
-      or correct SPEC §testing)
-- [ ] T25: correct SPEC's stale test-harness description — it names `window.__snake = {state, tick}`,
-      which the game never shipped; the real handle is `window.game`
+- [x] T24: the two remaining SPEC coverage promises, each resolved rather than papered over
+      1. **`Enter` starts** — it did not, and could not be made to globally: `handleKey` called
+         `preventDefault()` on Enter before the focused button's native activation, so Tab-then-Enter
+         was impossible for a keyboard-only player. `input.js` now hands Enter/Space back when an
+         activatable control (`button`, `a`, `label`, `[tabindex]`) has focus. New test tabs until
+         Start has focus (the skip link and header controls come first, so it walks rather than
+         assuming an order), presses Enter, asserts the run started and that polite `aria-live` said
+         so — and checks P/Escape still reach the game with nothing focused.
+      2. **blur auto-pause** — implemented, measured, and reverted. Chromium fires `window blur` when
+         focus moves to devtools or a second monitor, which would pause on interactions that are not
+         "I left"; it also cannot be driven from Playwright without stealing focus from every other
+         page in the shared browser. The shipped promise is therefore the narrower one: hidden pauses,
+         visible does not auto-resume. New test overrides `document.hidden` before dispatching
+         visibilitychange (a plain Event would have made it a test of nothing), asserts the clock froze
+         and that coming back leaves it paused until the player presses P.
+- [x] T25: SPEC §testing now describes the harness that exists — `window.game` (live `state`, `pump`,
+      `steer`, `run`, `restart`, `resize`, `cycleTheme`) instead of the never-shipped `window.__snake`;
+      README's key table splits `Space` from `Enter` to match what each actually does
