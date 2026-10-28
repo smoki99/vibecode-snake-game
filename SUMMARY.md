@@ -1,7 +1,7 @@
 # What we archived — Snake, production-grade
 
 Snapshot date: 2026-10-28. Repo: `/workspace`, 92 tracked files, 4 commits, clean tree.
-Live preview (throwaway tunnel over the dev server): `https://compare-prayer-resume-infections.trycloudflare.com`
+Live preview (throwaway tunnel over the dev server): `https://appliance-chef-stories-clothing.trycloudflare.com`
 
 ---
 

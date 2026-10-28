@@ -138,6 +138,6 @@ the key arrived and was processed, without excusing any behaviour the assertions
 
 ## Temporary preview
 
-`https://compare-prayer-resume-infections.trycloudflare.com` — a throwaway `cloudflared`
+`https://appliance-chef-stories-clothing.trycloudflare.com` — a throwaway `cloudflared`
 tunnel to the dev server for review. It dies with this sandbox and is not a deployment; the game
 itself has no server-side component.
