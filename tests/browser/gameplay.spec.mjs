@@ -389,6 +389,42 @@ test('game: the d-pad and a swipe both drive the board on a touch viewport', asy
   await page.close();
 });
 
+test('game: the tab going hidden pauses, and coming back does not resume', async () => {
+  // SPEC asks for "blur auto-pauses". The shipped behaviour is narrower and deliberately so: only the
+  // tab actually going hidden pauses. A window blur was tried and rejected — in Chromium it fires when
+  // focus moves to devtools or another monitor, and the page under test also cannot be blurred from
+  // Playwright without stealing focus from every other page in the browser. So this pins the promise
+  // that holds: hidden freezes the clock, and returning does not restart it on its own.
+  const { page } = await openPage(browser, `${APP()}/?seed=hidden&theme=dark`);
+  await armKeys(page);
+  await press(page, 'Space');
+  assert.equal((await readState(page)).status, 'playing');
+
+  // Override the getter before dispatching: a plain Event has document.hidden false, which would make
+  // this a test of nothing.
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const hidden = await readState(page);
+  assert.equal(hidden.status, 'paused', 'a hidden tab must pause a running game');
+  const headWhenHidden = hidden.head;
+
+  await pumpTicks(page, 3);
+  assert.deepEqual((await readState(page)).head, headWhenHidden, 'the board must not move while nobody is watching');
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  assert.equal((await readState(page)).status, 'paused', 'becoming visible again must not resume by itself');
+  assert.equal(await page.isVisible('#overlay'), true, 'the paused overlay should still be up');
+
+  await press(page, 'KeyP'); // the player decides when it moves again
+  assert.equal((await readState(page)).status, 'playing', 'and one key resumes when they are back');
+  await page.close();
+});
+
 test('game: a long tab stall does not fast-forward the snake into a wall', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=stall&difficulty=chill&theme=dark`);
   await armKeys(page);

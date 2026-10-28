@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { launchBrowser, openPage, startServer, warmUp } from '../helpers/browser.mjs';
+import { armKeys, launchBrowser, openPage, press, readState, startServer, warmUp } from '../helpers/browser.mjs';
 
 /**
  * Boot, presentation and accessibility smoke tests.
@@ -202,6 +202,47 @@ test('app: accessibility surface — labels, live region, focus, contrast', asyn
   for (const entry of contrast) {
     assert.ok(entry.ratio >= 4.5, `${entry.selector} contrast ${entry.ratio}:1 is below 4.5:1`);
   }
+  await page.close();
+});
+
+test('app: a keyboard-only player can reach Start and activate it with Enter', async () => {
+  // The overlay's primary control is a real <button>, so Enter should do what a click does. That only
+  // works if the global key handler hands the keystroke back to the focused control instead of
+  // swallowing it — otherwise the one thing a keyboard-only player must do first is impossible.
+  const { page } = await openPage(browser, `${server.url}/`);
+  await armKeys(page);
+
+  // Tab until Start has focus. The first tabbable element is the skip link and the header controls
+  // come before the card, so this walks rather than assuming an order markup can change.
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.keyboard.press('Tab');
+  let reached = null;
+  for (let i = 0; i < 12; i += 1) {
+    reached = await page.evaluate(() => {
+      const el = document.activeElement;
+      return { id: el.id, tag: el.tagName, name: el.textContent?.trim() ?? '' };
+    });
+    if (reached.id === 'overlay-primary') break;
+    await page.keyboard.press('Tab');
+  }
+  assert.equal(reached.id, 'overlay-primary', `Start must be reachable by Tab alone, landed on "${reached.name}"`);
+  assert.match(reached.name, /start/i, 'the button must say what it does');
+
+  await page.keyboard.press('Enter');
+  const started = await readState(page);
+  assert.equal(started.status, 'playing', 'Enter on the focused Start button must start the run');
+  // aria-live is polite, so wait for the announcement instead of sampling it one frame later.
+  await page.waitForFunction(() => /run started/i.test(document.querySelector('#live')?.textContent ?? ''), null, { timeout: 5_000 });
+
+  // Off any control the same keys belong to the game again — the guard is scoped, not a blanket stop.
+  await page.evaluate(() => document.activeElement.blur());
+  await press(page, 'KeyP');
+  assert.equal((await readState(page)).status, 'paused', 'P must keep working once focus is not on a control');
+
+  // Escape is the other pause key and is only reachable through this handler: a real button would eat
+  // it natively if it were focused, so prove it works with nothing in focus.
+  await press(page, 'Escape');
+  assert.equal((await readState(page)).status, 'playing', 'Escape toggles pause as well as P');
   await page.close();
 });
 
