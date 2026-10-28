@@ -160,9 +160,14 @@ cannot run) and each file's count is capped, so that surface cannot grow silentl
 - The browser suite is CPU-hungry (three Chromium instances). On a shared or throttled machine run it
   with `--test-concurrency=1`; `tools/reap-stale.mjs` clears browsers wedged by a killed run.
 
-## Temporary preview
+## Where to play it
 
-`https://bufing-vocals-albums-registrar.trycloudflare.com` — a throwaway `cloudflared`
+**Permanent:** <https://smoki99.github.io/vibecode-snake-game/> — GitHub Pages serving this repo.
+Or skip the network entirely: download
+[`dist/snake-standalone.html`](https://github.com/smoki99/vibecode-snake-game/raw/main/dist/snake-standalone.html)
+and double-click it. That file is the whole game, makes zero requests, and works on a plane.
+
+**Temporary preview of the working tree:** `https://bufing-vocals-albums-registrar.trycloudflare.com` — a throwaway `cloudflared`
 tunnel to the dev server for review. It dies with this sandbox and is not a deployment; the game
 itself has no server-side component. The URL changes every time the tunnel restarts, so treat it as
 a link you will be handed again rather than a bookmark.
