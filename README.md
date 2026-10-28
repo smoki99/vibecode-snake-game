@@ -79,8 +79,8 @@ generated into `dist/brand/` for the contexts that require a bitmap.
 ## Tests
 
 ```bash
-npm test          # 95 unit + asset + build tests, no browser, seconds
-npm run test:browser   # 24 Playwright tests against the built bundle, the dev page and file://
+npm test          # 103 unit + asset + build tests, no browser, seconds
+npm run test:browser   # 27 Playwright tests against the built bundle, the dev page and file://
 npm run test:all       # both
 ```
 
@@ -105,11 +105,34 @@ the key arrived and was processed, without excusing any behaviour the assertions
 - **Asset** (`tests/assets`) — icon grid/colour/title/fill constraints, sprite ↔ source sync
   (regenerated and diffed), font manifest checksums, OFL licences present, CSS references resolve.
 - **Build** (`tests/build`) — the bundle exists, is newer than its inputs, contains no network
-  references, embeds fonts/sprite/favicon, and stays under size budget.
+  references, embeds fonts/sprite/favicon, and stays under size budget. Plus a contract test that
+  resolves every selector, attribute and `game.state.*` key the browser specs name against what the
+  page actually provides, so a spec cannot claim DOM that does not exist (see `## Why the tests read
+  the way they do`).
+Every browser test drives the page through `window.game`, which is the controller's own API rather
+than a test-only shim: `state` is a live getter and `pump(ms)` steps the simulation by hand, so tests
+assert on state instead of waiting on the wall clock or comparing screenshots.
+
 - **Browser** (`tests/browser`) — boots clean, paints, DPR-aware, a11y wiring, reduced motion,
-  theme switching, and real gameplay: steering, buffered feints, eating, both death causes, pause,
+  theme switching, keyboard-only start (Tab to Start, Enter activates it), and real gameplay: arrow /
+  WASD / home-row steering, buffered feints, eating, both death causes, pause, hidden-tab auto-pause,
   restart, difficulty, touch, tab-stall capping, and a seeded replay that proves the sim is
   reproducible in the shipped bundle.
+
+### Why the tests read the way they do
+
+Every browser assertion names something the page provides, and `tests/build/dom-contract.spec.mjs`
+enforces that statically: ids are resolved against `index.html` plus one `icon-<name>` per declared
+icon, attributes against what markup or `dataset`/`setAttribute` actually set, and `game.state.*`
+reads against the real keys of `createState()`. This exists because specs previously named
+`#score-value` and `state.snakeLength`; Playwright then either timed out on a phantom element or
+compared `undefined === undefined` and reported success. A mutation probe injects each mistake class
+to prove the guard fails, and renaming an id in `index.html` is enough to see it name the offending
+spec line.
+
+State is read through one helper, `readState(page)`, so a rename in the sim shape is fixed in one
+place; reading `window.game.state` directly is allowed only inside `page.evaluate` (where the helper
+cannot run) and each file's count is capped, so that surface cannot grow silently.
 
 ## Design decisions
 

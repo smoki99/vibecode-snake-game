@@ -249,12 +249,20 @@ Two layers, because "it renders" and "the rules are right" are different claims.
   not a global start key — it belongs to the focused control, so the overlay's real `<button>` activates
   with it and the handler deliberately hands the keystroke back.
 - **Determinism in browser tests:** drive with `?seed=` and use the debug handle the page already
-  exposes, `window.game` — live `state`, plus `pump(ms)` to advance the simulation by hand and `steer`,
-  `run`, `restart`, `resize`, `cycleTheme`. Tests assert on state rather than pixels through it. Pixel assertions are limited to "canvas is not blank"
-  plus a golden screenshot kept for human eyeballs, not asserted on byte equality.
+  exposes, `window.game`. It is the controller's own API, not a test-only shim: `state` is a live
+  getter (never a snapshot), and `pump(ms)` advances the simulation by hand so a test can step the
+  board instead of waiting on the wall clock. The rest of the surface a test might reach for —
+  `steer`, `run`, `restart`, `pause`, `resume`, `togglePause`, `setDifficulty`, `setMuted`,
+  `toggleMute`, `setTheme`, `cycleTheme`, `resize`, `draw`, `scores` — is the same object the UI
+  drives, so nothing is tested through a path a player cannot take. Tests assert on state rather than
+  pixels; pixel assertions are limited to "canvas is not blank" plus a golden screenshot kept for
+  human eyeballs, not asserted on byte equality.
 - **Manual checklist** (documented at the bottom of `SPEC.md`, run once before "done"): keyboard-only
-  full run, phone swipe run at 390 px, reduced-motion run, blur for 10 s mid-game, 120 Hz display
-  smoothness, dark/light schemes.
+  full run, phone swipe run at 390 px, reduced-motion run, switch away mid-game and come back, 120 Hz
+  display smoothness, dark/light schemes. The first two are now automated (Tab-and-Enter, hidden
+  auto-pause, reduced motion, touch d-pad) and still worth doing by hand; "switch away" stays manual
+  because a real focus change cannot be driven from Playwright without stealing focus from every other
+  page in the shared browser — see the blur note above.
 - **Coverage expectation:** every branch of the pure sim reached (`step`, `takeSteering`,
   `spawnFood`, `hitTest`, `best` read/write); the render/controller layer is covered by browser
   tests rather than mocked, since mocking a canvas proves nothing.
