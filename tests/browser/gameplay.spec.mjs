@@ -81,6 +81,40 @@ test('game: arrow keys steer and a 180° reversal is refused', async () => {
   await page.close();
 });
 
+test('game: WASD and the home-row keys steer exactly like the arrows', async () => {
+  // SPEC lists "arrow keys and WASD both steer" as required browser coverage and README advertises
+  // `hjkl` as well, yet only the arrows were ever proven — so all three letter bindings could rot
+  // without a single test noticing. Each case starts from a heading where the requested turn is
+  // legal, because asserting `right` while already heading right would prove nothing.
+  const CASES = [
+    { key: 'KeyW', want: 'up', from: null },
+    { key: 'KeyK', want: 'up', from: null },
+    { key: 'KeyS', want: 'down', from: null },
+    { key: 'KeyJ', want: 'down', from: null },
+    { key: 'KeyA', want: 'left', from: 'up' },
+    { key: 'KeyH', want: 'left', from: 'up' },
+    { key: 'KeyD', want: 'right', from: 'up' },
+    { key: 'KeyL', want: 'right', from: 'up' },
+  ];
+  const { page } = await openPage(browser, `${APP()}/?seed=letters&theme=dark`);
+  await armKeys(page);
+  await press(page, 'Space'); // heading right
+  for (const { key, want, from } of CASES) {
+    await press(page, 'KeyR'); // a fresh run, so one case cannot consume another's turn
+    if (from) {
+      await press(page, 'ArrowUp');
+      await pumpTick(page);
+      assert.equal((await readState(page)).dir, from, `setup: ${key} needs to start heading ${from}`);
+    }
+    await press(page, key);
+    await pumpTick(page);
+    const state = await readState(page);
+    assert.equal(state.dir, want, `${key} must steer ${want}`);
+    assert.equal(state.status, 'playing', `${key} must not end the run`);
+  }
+  await page.close();
+});
+
 test('game: a two-stage feint queued in one frame both lands', async () => {
   const { page } = await openPage(browser, `${APP()}/?seed=feint&theme=dark`);
   await armKeys(page);
