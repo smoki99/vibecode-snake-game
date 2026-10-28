@@ -27,6 +27,14 @@ const KEY_DIRS = {
 const TEXT_ENTRY = ['text', 'search', 'email', 'number', 'password', 'url', 'tel', 'date', 'time'];
 
 /**
+ * Controls that do something with Enter or Space themselves: buttons, links, labels (the difficulty
+ * radios), and anything a script moved the keyboard to with a tabindex.
+ */
+const isActivationTarget = (target) =>
+  target instanceof Element &&
+  (target.tagName === 'BUTTON' || target.tagName === 'A' || target.tagName === 'LABEL' || target.hasAttribute('tabindex'));
+
+/**
  * Keys are only swallowed for the game when the user is not typing. A focused radio (the difficulty
  * pills) must not disable steering — the pill is a control of the game, not a text field.
  */
@@ -47,6 +55,10 @@ export function bindInput({ api, dom, onFirstGesture }) {
   function handleKey(event) {
     if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
     if (isTypingTarget(event.target)) return;
+    // Enter and Space belong to whatever the keyboard has focused. A real button activates itself and
+    // fires click, which bindButtons() already handles; stealing the key here would make that first
+    // button in the tab order impossible to press while still steering everywhere else.
+    if ((event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') && isActivationTarget(event.target)) return;
     const dir = KEY_DIRS[event.key];
     if (dir) {
       fireGesture();
