@@ -1,0 +1,6 @@
+# GitHub Pages: serve this repo as-is, with no Jekyll processing.
+#
+# The game is plain ES modules + CSS; there is nothing for Jekyll to build. Without this file Pages
+# runs a Jekyll pass that silently drops dotfiles and any path beginning with an underscore,
+# so a future partials/ or _redirects file would vanish from the deployed site while still
+# passing every local test.
