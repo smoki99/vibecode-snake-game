@@ -16,6 +16,7 @@ node_modules/
 # Local agent/tooling state, not project source.
 .claude/
 .pi/
+.piweb-pty-init.sh
 .app.log
 .tunnel.log
 .build-pw-*.log
